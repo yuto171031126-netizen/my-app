@@ -13,7 +13,7 @@ export default function Home() {
         <div className="inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-8 px-6 py-3 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-zinc-300 font-medium backdrop-blur-sm shadow-xl">
           <div>📅 <span className="text-white">2026.03.20</span> (Fri)</div>
           <div className="hidden sm:block text-zinc-700">|</div>
-          <div>📍 <span className="text-white">中部講堂</span></div>
+          <div>📍 <span className="text-white">Live House MONEPIA</span></div>
         </div>
       </header>
 
