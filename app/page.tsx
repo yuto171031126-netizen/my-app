@@ -45,7 +45,7 @@ export default function Home() {
       </main>
 
       <footer className="text-center py-8 border-t border-zinc-900 text-zinc-600 text-xs">
-        &copy; 2026 もねぴあ 14期 卒業ライブ特設サイト
+        &copy; 2026 はもねぴあ 14期 卒業ライブ特設サイト
       </footer>
     </div>
   );
