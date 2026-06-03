@@ -7,7 +7,7 @@ export default function Home() {
 
         <p className="text-purple-400 font-bold tracking-widest text-sm uppercase mb-3">MONEPIA 14th Generation</p>
         <h1 className="text-4xl md:text-6xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-zinc-200 to-purple-300 mb-6 drop-shadow-xl">
-          もねぴあ 14期 卒業ライブ
+          はもねぴあ 14期 卒業ライブ
         </h1>
         
         <div className="inline-flex flex-col sm:flex-row items-center gap-4 sm:gap-8 px-6 py-3 bg-zinc-900/80 border border-zinc-800 rounded-2xl text-zinc-300 font-medium backdrop-blur-sm shadow-xl">
