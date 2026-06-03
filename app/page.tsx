@@ -1,21 +1,6 @@
-// メンバーのデータを用意（これを外に出すとよりスマートになります）
-const members = [
-  { name: "サークル長 太郎", part: "リード" },
-  { name: "副長 花子", part: "コーラス" },
-  { name: "会計 次郎", part: "ベース" },
-];
-
-export default function Home() {
-  return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">メンバー一覧</h1>
-      {/* データをループして表示する */}
-      {members.map((member, index) => (
-        <div key={index} className="p-4 mb-2 border rounded">
-          <p className="font-bold">{member.name}</p>
-          <p className="text-sm text-gray-500">{member.part}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
+// イメージ図：こんな感じで「入り口」を並べるのがモダンです
+<div className="grid grid-cols-1 gap-6 p-6">
+  <div className="bg-blue-600 text-white p-12 rounded-2xl text-center">メンバー紹介</div>
+  <div className="bg-orange-500 text-white p-12 rounded-2xl text-center">タイムスケジュール</div>
+  <div className="bg-green-600 text-white p-12 rounded-2xl text-center">思い出フォト</div>
+</div>
