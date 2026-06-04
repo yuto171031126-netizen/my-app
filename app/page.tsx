@@ -6,7 +6,8 @@ export default function Home() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full animate-float pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-float [animation-delay:-4s] pointer-events-none" />
 
-      <main className="max-w-4xl mx-auto px-6 py-12 relative z-10">
+      {/* animate-fade-in でふわっと表示 */}
+      <main className="max-w-4xl mx-auto px-6 py-12 relative z-10 animate-fade-in">
         <header className="text-center mb-16">
           <p className="text-purple-400 font-bold tracking-widest text-sm uppercase mb-3">HAMONEPIA 14th Generation</p>
           <h1 className="text-4xl md:text-6xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-purple-300">
