@@ -1,10 +1,30 @@
-"use client";
+"use client"; 
 
+// ==========================================
+// ⚠️ Firebase 初期設定
+// ==========================================
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAQv-FjRRH8Tlo7VhIKNM5PlJcu0kCEj6E",
+  authDomain: "my-14th-arcade.firebaseapp.com",
+  projectId: "my-14th-arcade",
+  storageBucket: "my-14th-arcade.firebasestorage.app",
+  messagingSenderId: "367905134755",
+  appId: "1:367905134755:web:291dc5bf8d8fd8001e8716",
+  measurementId: "G-QYBSK0WJ5E"
+};
+
+// 二重初期化を防ぐ
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
+
+// ==========================================
+// 型定義（ここから下は元のコードのままでOKです！）
+// ==========================================
 import { useState, useEffect, useRef } from "react";
 
-// ==========================================
-// 型定義
-// ==========================================
 interface Note { id: number; lane: number; y: number; isHeal: boolean; }
 interface RankingItem { name: string; score: number; textScore?: string; date: string; }
 interface Card { id: number; memberId: number; name: string; isFlipped: boolean; isMatched: boolean; }
