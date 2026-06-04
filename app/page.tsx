@@ -1,3 +1,5 @@
+"use client";
+
 export default function Home() {
   const liveNews = [
     { time: "LIVE INFO", title: "本日は「はもねぴあ 14期 卒業ライブ」にご来場いただきありがとうございます！" },
@@ -37,19 +39,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* メニューグリッド */}
+        {/* メニューグリッド（ゲームを削除し、2カラムで綺麗に収まるように変更） */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MenuCard href="/about" title="14期生プロフィール ▷" desc="ステージに立つ17人の詳細情報・出身地・一言" />
           <MenuCard href="/bands" title="出演バンド紹介 ▷" desc="卒業ライブを彩る各出演バンドの紹介" />
-          <MenuCard href="/schedule" title="Time Schedule ▷" desc="当日の進行スケジュール・タイムテーブル" />
+          <MenuCard href="/schedule" title="Time Schedule ▷" desc="当当日の進行スケジュール・タイムテーブル" />
           <MenuCard href="/gallery" title="4年間の思い出ギャラリー ▷" desc="パンフレット未収録のオフショット・秘蔵写真一覧" />
-          
-          {/* 【予告】ミニゲーム用のボタンを先行設置！ */}
-          <MenuCard href="/game" title="14期限定ミニゲーム ▷" desc="【お楽しみ】開演までの待ち時間に遊べるミニゲーム" isGame={true} />
-
-          <div className="md:col-span-2">
-            <MenuCard href="/access" title="会場アクセス ▷" desc="中部講堂へのアクセス・帰り道の確認に" />
-          </div>
+          <MenuCard href="/access" title="会場アクセス ▷" desc="中部講堂へのアクセス・帰り道の確認に" />
         </div>
       </main>
 
@@ -60,21 +56,17 @@ export default function Home() {
   );
 }
 
-// メニューカード（スマホタップ対応版）
-function MenuCard({ href, title, desc, isGame = false }: { href: string, title: string, desc: string, isGame?: boolean }) {
+// メニューカード
+function MenuCard({ href, title, desc }: { href: string, title: string, desc: string }) {
   return (
     <a 
       href={href} 
-      className={`p-6 bg-zinc-900/40 backdrop-blur-sm border rounded-2xl shadow-lg block select-none
-        transition-premium hover:-translate-y-1
-        ${isGame 
-          ? 'border-purple-500/30 bg-purple-950/10 hover:border-purple-400' 
-          : 'border-white/10 hover:border-purple-500/50 hover:bg-zinc-800/60'
-        }
+      className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg block select-none
+        transition-premium hover:-translate-y-1 hover:border-purple-500/50 hover:bg-zinc-800/60
         active:scale-[0.98] active:border-purple-400 active:bg-purple-900/20 active:shadow-[0_0_20px_rgba(168,85,247,0.4)]
-      `}
+      "
     >
-      <h2 className={`text-xl font-bold ${isGame ? 'text-purple-300' : 'text-white'}`}>{title}</h2>
+      <h2 className="text-xl font-bold text-white">{title}</h2>
       <p className="text-zinc-400 text-sm mt-1">{desc}</p>
     </a>
   );
