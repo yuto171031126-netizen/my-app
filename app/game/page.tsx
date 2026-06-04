@@ -1,638 +1,638 @@
-"use client"; 
+"use client";
 
-// ==========================================
-// ⚠️ Firebase 初期設定
-// ==========================================
+import { useState, useEffect, useRef } from "react";
+// Firebase用のインポート（すべて一番上に集めました）
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, collection, onSnapshot, query, orderBy, limit, addDoc } from "firebase/firestore";
 
+// ==========================================
+// 1. FIREBASE 初期化設定
+// ==========================================
 const firebaseConfig = {
-  apiKey: "AIzaSyAQv-FjRRH8Tlo7VhIKNM5PlJcu0kCEj6E",
-  authDomain: "my-14th-arcade.firebaseapp.com",
-  projectId: "my-14th-arcade",
-  storageBucket: "my-14th-arcade.firebasestorage.app",
-  messagingSenderId: "367905134755",
-  appId: "1:367905134755:web:291dc5bf8d8fd8001e8716",
-  measurementId: "G-QYBSK0WJ5E"
+  // 【重要】ここに自分のFirebaseのConfigを貼り付けてください
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_ID",
+  appId: "YOUR_APP_ID"
 };
 
-// 二重初期化を防ぐ
+// サーバーサイドレンダリング(SSR)エラーを防ぐための初期化
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
 // ==========================================
-// 型定義（ここから下は元のコードのままでOKです！）
+// 2. 型定義 (TypeScript Interfaces)
 // ==========================================
-import { useState, useEffect, useRef } from "react";
-
 interface Note { id: number; lane: number; y: number; isHeal: boolean; }
 interface RankingItem { name: string; score: number; textScore?: string; date: string; }
 interface Card { id: number; memberId: number; name: string; isFlipped: boolean; isMatched: boolean; }
+interface RouletteMember { name: string; value: number; effectText: string; abilityLabel?: string; }
 
-interface RouletteMember {
-  name: string;
-  value: number;       
-  effectText: string;  
-  abilityLabel?: string; // 簡易ラベル用
-}
-
-// 14期メンバーリスト ＆ 特殊能力
+// ==========================================
+// 3. 定数データ (ゲームのメンバーデータなど)
+// ==========================================
 const ROULETTE_MEMBERS: RouletteMember[] = [
-  { name: "メンバーA", value: 3, effectText: "標準的な頼れる同期。フツーに+3される。", abilityLabel: "通常ドロー" },
-  { name: "メンバーB", value: 5, effectText: "破壊神。一気に【+5】される重戦車。", abilityLabel: "高火力注意" },
-  { name: "メンバーC", value: -3, effectText: "癒やし系。なんと合計値を【-3】してくれる！", abilityLabel: "回復" },
-  { name: "メンバーD", value: 1, effectText: "影が薄い（？）。手堅く【+1】だけで耐える。", abilityLabel: "微増" },
-  { name: "メンバーE", value: 0, effectText: "遅刻魔。何もしてこない。まさかの【±0】！", abilityLabel: "無害" },
-  { name: "メンバーF", value: 2, effectText: "【特殊】次の人が引くカードの数値を2倍にする呪い！", abilityLabel: "⚠️次2倍呪い" },
-  { name: "メンバーG", value: 4, effectText: "熱血漢。じわじわ追い詰める【+4】。", abilityLabel: "高火力" },
-  { name: "メンバーH", value: -2, effectText: "空気清浄機。場の数値を【-2】に下げる。", abilityLabel: "回復" },
-  { name: "メンバーI", value: 6, effectText: "地雷。引いた瞬間【+6】。14を超えさせる天才。", abilityLabel: "🚨即死級地雷" },
-  { name: "メンバーJ", value: 1, effectText: "【特殊】合計値を無理やり【13】にする戦犯ムーブ。", abilityLabel: "💣一撃リーチ" },
-  { name: "メンバーK", value: 2, effectText: "お調子者。コソッと【+2】。", abilityLabel: "小火力" },
-  { name: "メンバーL", value: -5, effectText: "大天使。大ピンチを救う奇跡の【-5】！", abilityLabel: "🌟大回復" },
-  { name: "メンバーM", value: 0, effectText: "【特殊】奇跡！場の合計値を【0】に完全リセット！", abilityLabel: "🔄完全リセット" },
-  { name: "メンバーN", value: 3, effectText: "ドS。手堅く【+3】を押し付けてくる。", abilityLabel: "通常ドロー" },
+  { name: "メンバーA", value: 3, effectText: "標準的な頼れる同期。", abilityLabel: "通常" },
+  { name: "メンバーB", value: 5, effectText: "常にテンションが高いムードメーカー。", abilityLabel: "熱血" },
+  { name: "メンバーC", value: -2, effectText: "冷静沈着。時に冷徹。", abilityLabel: "冷静" },
+  { name: "メンバーD", value: 8, effectText: "ここぞという時に大金星を挙げる天才。", abilityLabel: "覚醒" },
+  { name: "メンバーE", value: 1, effectText: "コツコツと実績を積み上げるタイプ。", abilityLabel: "堅実" },
 ];
 
-const MEMORY_MEMBER_NAMES = ROULETTE_MEMBERS.map(m => m.name);
+const MEMORY_MEMBERS = [
+  { id: 1, name: "メンバーA" }, { id: 2, name: "メンバーB" },
+  { id: 3, name: "メンバーC" }, { id: 4, name: "メンバーD" },
+  { id: 5, name: "メンバーE" }, { id: 6, name: "メンバーF" },
+  { id: 7, name: "メンバーG" }, { id: 8, name: "メンバーH" },
+];
 
+// ==========================================
+// 4. メインコンポーネント本体
+// ==========================================
 export default function GamePage() {
+  // --- 共通状態 ---
   const [playerName, setPlayerName] = useState("");
   const [isNameEntered, setIsNameEntered] = useState(false);
   const [activeGame, setActiveGame] = useState<"none" | "beat" | "memory" | "roulette">("none");
 
-  // ランキングデータ
+  // --- オンラインランキング状態 (Firebaseからリアルタイム取得) ---
   const [rankingBeat, setRankingBeat] = useState<RankingItem[]>([]);
   const [rankingMemory, setRankingMemory] = useState<RankingItem[]>([]);
   const [rankingRoulette, setRankingRoulette] = useState<RankingItem[]>([]);
 
-  // GAME 01: 音ゲー用
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
+  // --- 音ゲー状態 ---
+  const [beatScore, setBeatScore] = useState(0);
+  const [beatCombo, setBeatCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
-  const [health, setHealth] = useState(100); 
+  const [life, setLife] = useState(10);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [effect, setEffect] = useState<string | null>(null);
-  const [speed, setSpeed] = useState(1.2); 
-  const [level, setLevel] = useState(1); 
-  const nextNoteId = useRef(0);
-  const gameLoopRef = useRef<number | null>(null);
-  const lanes = [0, 1];
+  const [beatGameActive, setBeatGameActive] = useState(false);
+  const beatScoreRef = useRef(0);
+  const maxComboRef = useRef(0);
 
-  // GAME 02: 神経衰弱用
+  // --- 神経衰弱状態 ---
   const [cards, setCards] = useState<Card[]>([]);
-  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
-  const [memoryTime, setMemoryTime] = useState(0); 
-  const [memoryStarted, setMemoryStarted] = useState(false);
-  const [memoryOver, setMemoryOver] = useState(false);
-  const [isLock, setIsLock] = useState(false); 
-  const memoryTimerRef = useRef<number | null>(null);
+  const [flippedCards, setFlippedCards] = useState<number[]>([]);
+  const [memoryMoves, setMemoryMoves] = useState(0);
+  const [memoryTime, setMemoryTime] = useState(0);
+  const [memoryActive, setMemoryActive] = useState(false);
 
-  // GAME 03: デス・ローレット用
-  const [rouletteTotal, setRouletteTotal] = useState(0); 
-  const [rouletteCount, setRouletteCount] = useState(0); 
-  const [currentMember, setCurrentMember] = useState<RouletteMember | null>(null);
-  const [rouletteDeck, setRouletteDeck] = useState<RouletteMember[]>([]);
-  const [isDoubleIcon, setIsDoubleIcon] = useState(false); 
-  const [rouletteOver, setRouletteOver] = useState(false);
-  const [showRouletteRuleModal, setShowRouletteRuleModal] = useState(false); // ルールモーダル管理
+  // --- ルーレット状態 ---
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<RouletteMember | null>(null);
+  const [totalRouletteScore, setTotalRouletteScore] = useState(0);
+  const [rouletteCount, setRouletteCount] = useState(0);
 
-  // 起動時にランキング読み込み
+  // ==========================================
+  // 5. FIREBASE リアルタイムランキング監視 (useEffect)
+  // ==========================================
   useEffect(() => {
-    const savedBeat = localStorage.getItem("14th_ranking_beat");
-    const savedMemory = localStorage.getItem("14th_ranking_memory");
-    const savedRoulette = localStorage.getItem("14th_ranking_roulette");
-    if (savedBeat) setRankingBeat(JSON.parse(savedBeat));
-    if (savedMemory) setRankingMemory(JSON.parse(savedMemory));
-    if (savedRoulette) setRankingRoulette(JSON.parse(savedRoulette));
+    // ① 音ゲーのランキング監視 (上位5件)
+    const qBeat = query(collection(db, "rankings_beat"), orderBy("score", "desc"), limit(5));
+    const unsubscribeBeat = onSnapshot(qBeat, (snapshot) => {
+      setRankingBeat(snapshot.docs.map(doc => doc.data() as RankingItem));
+    });
+
+    // ② 神経衰弱のランキング監視 (手数が少ない順・上位5件)
+    const qMemory = query(collection(db, "rankings_memory"), orderBy("score", "asc"), limit(5));
+    const unsubscribeMemory = onSnapshot(qMemory, (snapshot) => {
+      setRankingMemory(snapshot.docs.map(doc => doc.data() as RankingItem));
+    });
+
+    // ③ ルーレットのランキング監視 (上位5件)
+    const qRoulette = query(collection(db, "rankings_roulette"), orderBy("score", "desc"), limit(5));
+    const unsubscribeRoulette = onSnapshot(qRoulette, (snapshot) => {
+      setRankingRoulette(snapshot.docs.map(doc => doc.data() as RankingItem));
+    });
+
+    // 画面を閉じるときに監視を解除する設定
+    return () => {
+      unsubscribeBeat();
+      unsubscribeMemory();
+      unsubscribeRoulette();
+    };
   }, []);
 
   // ==========================================
-  // GAME 01: 音ゲー ロジック
+  // 6. 音ゲー (TAP BEAT) ロジック
   // ==========================================
-  const startBeatGame = () => {
-    setScore(0); setCombo(0); setMaxCombo(0); setNotes([]); setHealth(100); setSpeed(1.2); setLevel(1);
-    setActiveGame("beat");
-  };
+  useEffect(() => {
+    beatScoreRef.current = beatScore;
+    maxComboRef.current = maxCombo;
+  }, [beatScore, maxCombo]);
 
   useEffect(() => {
-    if (activeGame !== "beat" || health <= 0) {
-      if (activeGame === "beat" && health <= 0) endBeatGame();
-      return;
-    }
-    const levelTimer = setInterval(() => {
-      setLevel((prev) => {
-        const next = prev + 1;
-        setSpeed((s) => Math.min(4.0, s + 0.15));
-        setEffect(`LEVEL ${next}!`);
-        return next;
-      });
-    }, 5000);
-    return () => clearInterval(levelTimer);
-  }, [activeGame, health]);
+    if (!beatGameActive) return;
 
-  const endBeatGame = () => {
-    if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
-    const newRecord: RankingItem = { name: playerName, score: score, date: new Date().toLocaleDateString() };
-    const updated = [...rankingBeat, newRecord].sort((a, b) => b.score - a.score).slice(0, 5);
-    setRankingBeat(updated);
-    localStorage.setItem("14th_ranking_beat", JSON.stringify(updated));
-    setActiveGame("none");
-    alert(`ゲームオーバー！ スコア: ${score} pt`);
-  };
-
-  useEffect(() => {
-    if (activeGame !== "beat") return;
-    let lastNoteTime = Date.now();
-    const updateGame = () => {
-      setNotes((prev) =>
-        prev.map((n) => ({ ...n, y: n.y + speed })).filter((n) => {
-          if (n.y > 95) {
-            setCombo(0);
-            if (!n.isHeal) setHealth((h) => Math.max(0, h - 10));
+    const gameInterval = setInterval(() => {
+      setNotes((prev) => {
+        const moved = prev.map((n) => ({ ...n, y: n.y + 6 })).filter((n) => {
+          if (n.y > 90) {
+            if (!n.isHeal) {
+              setLife((l) => Math.max(0, l - 1));
+              setBeatCombo(0);
+            }
             return false;
           }
           return true;
-        })
-      );
-      const now = Date.now();
-      const interval = Math.max(300, 800 - (level - 1) * 50);
-      if (now - lastNoteTime > interval) {
-        setNotes((prev) => [...prev, { id: nextNoteId.current++, lane: Math.floor(Math.random() * 2), y: 0, isHeal: Math.random() < 0.15 }]);
-        lastNoteTime = now;
-      }
-      gameLoopRef.current = requestAnimationFrame(updateGame);
-    };
-    gameLoopRef.current = requestAnimationFrame(updateGame);
-    return () => { if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current); };
-  }, [activeGame, speed, level]);
+        });
 
-  const handleBeatTap = (lane: number) => {
-    const target = notes.find((n) => n.lane === lane && n.y > 65 && n.y < 92);
-    if (target) {
-      setNotes((prev) => prev.filter((n) => n.id !== target.id));
-      if (target.isHeal) {
-        setHealth((h) => Math.min(100, h + 10));
-        setEffect("HEAL +10!");
-      } else {
-        const newCombo = combo + 1;
-        setCombo(newCombo);
-        if (newCombo > maxCombo) setMaxCombo(newCombo);
-        const added = Math.floor(10 * (1 + Math.floor(newCombo / 10) * 0.1));
-        setScore((s) => s + added);
-        setEffect(`PERFECT! +${added}`);
-      }
-    } else {
-      setCombo(0);
-      setHealth((h) => Math.max(0, h - 10));
-      setEffect("MISS -10");
+        if (Math.random() < 0.25) {
+          moved.push({
+            id: Date.now() + Math.random(),
+            lane: Math.floor(Math.random() * 4),
+            y: 0,
+            isHeal: Math.random() < 0.1,
+          });
+        }
+        return moved;
+      });
+    }, 50);
+
+    return () => clearInterval(gameInterval);
+  }, [beatGameActive]);
+
+  useEffect(() => {
+    if (beatGameActive && life <= 0) {
+      endBeatGame();
     }
-    setTimeout(() => setEffect(null), 400);
+  }, [life, beatGameActive]);
+
+  const startBeatGame = () => {
+    setBeatScore(0);
+    setBeatCombo(0);
+    setMaxCombo(0);
+    setLife(10);
+    setNotes([]);
+    setBeatGameActive(true);
+    setActiveGame("beat");
   };
 
-  // ==========================================
-  // GAME 02: 神経衰弱 ロジック
-  // ==========================================
-  const startMemoryGame = () => {
-    let deck: Card[] = [];
-    MEMORY_MEMBER_NAMES.forEach((name, id) => {
-      deck.push({ id: id * 2, memberId: id, name, isFlipped: false, isMatched: false });
-      deck.push({ id: id * 2 + 1, memberId: id, name, isFlipped: false, isMatched: false });
+  const handleLaneTap = (laneIndex: number) => {
+    if (!beatGameActive) return;
+    setNotes((prev) => {
+      const targetIndex = prev.findIndex((n) => n.lane === laneIndex && n.y >= 70 && n.y <= 88);
+      if (targetIndex !== -1) {
+        const hitNote = prev[targetIndex];
+        if (hitNote.isHeal) {
+          setLife((l) => Math.min(10, l + 2));
+          setBeatScore((s) => s + 30);
+        } else {
+          setBeatScore((s) => s + 10);
+          setBeatCombo((c) => {
+            const next = c + 1;
+            if (next > maxComboRef.current) setMaxCombo(next);
+            return next;
+          });
+        }
+        return prev.filter((_, idx) => idx !== targetIndex);
+      } else {
+        setBeatCombo(0);
+        setLife((l) => Math.max(0, l - 1));
+        return prev;
+      }
     });
-    deck.sort(() => Math.random() - 0.5);
-    setCards(deck);
-    setSelectedIndices([]);
-    setMemoryTime(0);
-    setMemoryOver(false);
-    setIsLock(false);
-    setMemoryStarted(true);
-    setActiveGame("memory");
-
-    if (memoryTimerRef.current) clearInterval(memoryTimerRef.current);
-    memoryTimerRef.current = window.setInterval(() => {
-      setMemoryTime((t) => t + 1);
-    }, 1000);
   };
 
-  const handleCardClick = (index: number) => {
-    if (isLock || cards[index].isFlipped || cards[index].isMatched) return;
-    const updatedCards = [...cards];
-    updatedCards[index].isFlipped = true;
-    setCards(updatedCards);
-    const nextSelect = [...selectedIndices, index];
-    setSelectedIndices(nextSelect);
+  // 【Firebaseオンライン保存】音ゲー終了時
+  const endBeatGame = async () => {
+    setBeatGameActive(false);
+    const finalScore = beatScoreRef.current;
+    try {
+      await addDoc(collection(db, "rankings_beat"), {
+        name: playerName || "名無し",
+        score: finalScore,
+        date: new Date().toLocaleDateString()
+      });
+    } catch (e) {
+      console.error("Firebase保存エラー:", e);
+    }
+    setActiveGame("none");
+  };
 
-    if (nextSelect.length === 2) {
-      setIsLock(true);
-      const [firstIdx, secondIdx] = nextSelect;
-      if (cards[firstIdx].memberId === cards[secondIdx].memberId) {
+  // ==========================================
+  // 7. 神経衰弱 (MEMORY MATCH) ロジック
+  // ==========================================
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (memoryActive) {
+      timer = setInterval(() => setMemoryTime((t) => t + 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [memoryActive]);
+
+  const startMemoryGame = () => {
+    const doubled = [...MEMORY_MEMBERS, ...MEMORY_MEMBERS].map((m, index) => ({
+      id: index,
+      memberId: m.id,
+      name: m.name,
+      isFlipped: false,
+      isMatched: false,
+    }));
+    for (let i = doubled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [doubled[i], doubled[j]] = [doubled[j], doubled[i]];
+    }
+    setCards(doubled);
+    setFlippedCards([]);
+    setMemoryMoves(0);
+    setMemoryTime(0);
+    setMemoryActive(true);
+    setActiveGame("memory");
+  };
+
+  const handleCardClick = (id: number) => {
+    if (!memoryActive || flippedCards.length >= 2) return;
+    const target = cards.find((c) => c.id === id);
+    if (!target || target.isFlipped || target.isMatched) return;
+
+    const updated = cards.map((c) => (c.id === id ? { ...c, isFlipped: true } : c));
+    setCards(updated);
+
+    const nextFlipped = [...flippedCards, id];
+    setFlippedCards(nextFlipped);
+
+    if (nextFlipped.length === 2) {
+      setMemoryMoves((m) => m + 1);
+      const [firstId, secondId] = nextFlipped;
+      const firstCard = cards.find((c) => c.id === firstId);
+      const secondCard = cards.find((c) => c.id === secondId);
+
+      if (firstCard && secondCard && firstCard.memberId === secondCard.memberId) {
         setTimeout(() => {
-          const matchedCards = [...cards];
-          matchedCards[firstIdx].isMatched = true;
-          matchedCards[secondIdx].isMatched = true;
-          setCards(matchedCards);
-          setSelectedIndices([]);
-          setIsLock(false);
-          if (matchedCards.every((c) => c.isMatched)) endMemoryGame(true);
-        }, 500);
+          setCards((prev) =>
+            prev.map((c) => (c.id === firstId || c.id === secondId ? { ...c, isMatched: true } : c))
+          );
+          setFlippedCards([]);
+          // 全員揃ったかチェック
+          setCards((currentCards) => {
+            const allMatched = currentCards.every((c) => c.isMatched || c.id === firstId || c.id === secondId);
+            if (allMatched) endMemoryGame();
+            return currentCards;
+          });
+        }, 600);
       } else {
         setTimeout(() => {
-          const resetCards = [...cards];
-          resetCards[firstIdx].isFlipped = false;
-          resetCards[secondIdx].isFlipped = false;
-          setCards(resetCards);
-          setSelectedIndices([]);
-          setIsLock(false);
+          setCards((prev) =>
+            prev.map((c) => (c.id === firstId || c.id === secondId ? { ...c, isFlipped: false } : c))
+          );
+          setFlippedCards([]);
         }, 1000);
       }
     }
   };
 
-  const endMemoryGame = (isClear: boolean) => {
-    if (memoryTimerRef.current) clearInterval(memoryTimerRef.current);
-    setMemoryStarted(false);
-    setMemoryOver(true);
-    if (isClear) {
-      const newRecord: RankingItem = { name: playerName, score: memoryTime, textScore: `${memoryTime}秒`, date: new Date().toLocaleDateString() };
-      const updated = [...rankingMemory, newRecord].sort((a, b) => a.score - b.score).slice(0, 5);
-      setRankingMemory(updated);
-      localStorage.setItem("14th_ranking_memory", JSON.stringify(updated));
+  // 【Firebaseオンライン保存】神経衰弱終了時
+  const endMemoryGame = async () => {
+    setMemoryActive(false);
+    try {
+      await addDoc(collection(db, "rankings_memory"), {
+        name: playerName || "名無し",
+        score: memoryMoves + 1, // スコア列には手数を保存
+        textScore: `${memoryMoves + 1}手 (${memoryTime}秒)`,
+        date: new Date().toLocaleDateString()
+      });
+    } catch (e) {
+      console.error(e);
     }
+    setActiveGame("none");
   };
 
   // ==========================================
-  // GAME 03: デス・ローレット ロジック
+  // 8. ルーレット (ROULETTE) ロジック
   // ==========================================
   const startRouletteGame = () => {
-    const deck = [...ROULETTE_MEMBERS].sort(() => Math.random() - 0.5);
-    setRouletteDeck(deck);
-    setRouletteTotal(0);
+    setSelectedMember(null);
+    setTotalRouletteScore(0);
     setRouletteCount(0);
-    setCurrentMember(null);
-    setIsDoubleIcon(false);
-    setRouletteOver(false);
+    setIsSpinning(false);
     setActiveGame("roulette");
-    setShowRouletteRuleModal(true); // 開始時にルールを見せる
   };
 
-  const drawCard = () => {
-    if (rouletteOver || rouletteDeck.length === 0) return;
+  const spinRoulette = () => {
+    if (isSpinning || rouletteCount >= 3) return;
+    setIsSpinning(true);
+    let l = 0;
+    const interval = setInterval(() => {
+      setSelectedMember(ROULETTE_MEMBERS[Math.floor(Math.random() * ROULETTE_MEMBERS.length)]);
+      l++;
+      if (l > 15) {
+        clearInterval(interval);
+        setIsSpinning(false);
+        setRouletteCount((c) => {
+          const nextCount = c + 1;
+          setSelectedMember((finalMember) => {
+            if (finalMember) {
+              setTotalRouletteScore((s) => {
+                const finalScore = s + finalMember.value;
+                if (nextCount === 3) endRouletteGame(finalScore);
+                return finalScore;
+              });
+            }
+            return finalMember;
+          });
+          return nextCount;
+        });
+      }
+    }, 100);
+  };
 
-    let deck = [...rouletteDeck];
-    const picked = deck.pop()!; 
-    
-    if (deck.length === 0) {
-      deck = [...ROULETTE_MEMBERS].sort(() => Math.random() - 0.5);
-    }
-    setRouletteDeck(deck);
-    setCurrentMember(picked);
-
-    let nextValue = picked.value;
-    
-    if (isDoubleIcon) {
-      nextValue = nextValue * 2;
-      setIsDoubleIcon(false);
-    }
-
-    let nextTotal = rouletteTotal;
-
-    if (picked.name === "メンバーF") {
-      setIsDoubleIcon(true);
-      nextTotal += nextValue;
-    } else if (picked.name === "メンバーJ") {
-      nextTotal = 13;
-    } else if (picked.name === "メンバーM") {
-      nextTotal = 0;
-    } else {
-      nextTotal += nextValue;
-    }
-
-    if (nextTotal < 0) nextTotal = 0;
-
-    setRouletteTotal(nextTotal);
-
-    if (nextTotal > 14) {
-      setTimeout(() => {
-        endRouletteGame();
-      }, 800);
-    } else {
-      setRouletteCount((c) => c + 1);
+  // 【Firebaseオンライン保存】ルーレット終了時
+  const endRouletteGame = async (finalScore: number) => {
+    try {
+      await addDoc(collection(db, "rankings_roulette"), {
+        name: playerName || "名無し",
+        score: finalScore,
+        date: new Date().toLocaleDateString()
+      });
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  const endRouletteGame = () => {
-    setRouletteOver(true);
-    const newRecord: RankingItem = {
-      name: playerName,
-      score: rouletteCount, 
-      textScore: `${rouletteCount}枚生存`,
-      date: new Date().toLocaleDateString()
-    };
-    const updated = [...rankingRoulette, newRecord].sort((a, b) => b.score - a.score).slice(0, 5);
-    setRankingRoulette(updated);
-    localStorage.setItem("14th_ranking_roulette", JSON.stringify(updated));
-  };
-
-
+  // ==========================================
+  // 9. 画面のレイアウト (JSX 表示部分)
+  // ==========================================
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans relative overflow-hidden flex flex-col justify-between select-none">
-      
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans select-none antialiased">
       {/* ヘッダー */}
-      <header className="p-6 text-center relative z-10 border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md">
-        {activeGame !== "none" ? (
-          <button onClick={() => { setActiveGame("none"); setRouletteOver(false); if(memoryTimerRef.current) clearInterval(memoryTimerRef.current); }} className="text-zinc-500 hover:text-purple-400 text-xs absolute left-6 top-7">◁ 終了</button>
-        ) : (
-          <a href="/" className="text-zinc-500 hover:text-purple-400 text-xs absolute left-6 top-7">◁ 戻る</a>
+      <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-3 h-3 bg-purple-500 rounded-full animate-pulse" />
+          <h1 className="text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+            14th ARCADE CENTER
+          </h1>
+        </div>
+        {isNameEntered && (
+          <div className="flex items-center space-x-2 bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-700">
+            <span className="text-xs text-zinc-400 font-medium">PLAYER:</span>
+            <span className="text-sm font-bold text-purple-300">{playerName}</span>
+          </div>
         )}
-        <h1 className="text-lg font-bold tracking-widest text-purple-400">14th ARCADE CENTER</h1>
       </header>
 
-      {/* メインスペース */}
-      <div className="flex-1 max-w-xl w-full mx-auto relative px-4 flex flex-col justify-center py-6 overflow-y-auto">
+      {/* メインエリア */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* 名前入力 */}
-        {!isNameEntered && (
-          <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full">
-            <h2 className="text-xl font-black mb-2">エントリーネーム</h2>
-            <p className="text-zinc-400 text-xs mb-6">ランキングに刻まれる名前を入力してください</p>
-            <input
-              type="text"
-              maxLength={10}
-              placeholder="名前を入力"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-center focus:outline-none focus:border-purple-500 mb-4 font-bold"
-            />
-            <button
-              onClick={() => playerName.trim() && setIsNameEntered(true)}
-              disabled={!playerName.trim()}
-              className="w-full py-3 bg-purple-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl shadow-lg text-sm tracking-widest"
-            >
-              ゲームセンターへ入場 ▷
-            </button>
-          </div>
-        )}
-
-        {/* 総合ゲームメニュー */}
-        {isNameEntered && activeGame === "none" && !memoryOver && !rouletteOver && (
-          <div className="space-y-6 w-full max-w-md mx-auto">
-            <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl backdrop-blur-md text-center">
-              <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Player</p>
-              <h2 className="text-lg font-bold text-purple-300 mb-6">🔥 {playerName} 🔥</h2>
-              
-              <p className="text-left text-zinc-400 text-xs font-bold mb-3 uppercase tracking-wider">Select Mini Game</p>
-              
-              {/* GAME 01 */}
-              <button onClick={startBeatGame} className="w-full p-4 bg-gradient-to-r from-purple-900/20 to-zinc-900/40 border border-purple-500/20 rounded-2xl text-left hover:border-purple-500/50 mb-3 block">
-                <div className="font-bold text-white text-sm">GAME 01: 14th SURVIVAL TAP</div>
-                <div className="text-zinc-400 text-xs mt-1">レベルアップする高速サバイバル音ゲー！</div>
-              </button>
-
-              {/* GAME 02 */}
-              <button onClick={startMemoryGame} className="w-full p-4 bg-gradient-to-r from-blue-900/20 to-zinc-900/40 border border-blue-500/20 rounded-2xl text-left hover:border-blue-500/50 mb-3 block">
-                <div className="font-bold text-white text-sm">GAME 02: 14期生 真剣衰弱 🃏</div>
-                <div className="text-zinc-400 text-xs mt-1">全28枚のカードを最速でめくり切れ！タイムアタック</div>
-              </button>
-
-              {/* GAME 03: デス・ローレット */}
-              <button onClick={startRouletteGame} className="w-full p-4 bg-gradient-to-r from-red-900/20 to-zinc-900/40 border border-red-500/30 rounded-2xl text-left hover:border-red-400 block active:scale-[0.98] transition-all">
-                <div className="font-bold text-red-400 text-sm">GAME 03: 14th デス・ローレット 💀</div>
-                <div className="text-zinc-400 text-xs mt-1">合計が【14】を超えたら即爆発！身内ネタ能力サバイバル</div>
-              </button>
-            </div>
-
-            {/* ランキングトリプル表示 */}
-            <div className="grid grid-cols-1 gap-3 text-xs">
-              <div className="p-4 bg-zinc-900/20 border border-zinc-900 rounded-xl">
-                <h3 className="text-[10px] font-bold text-purple-400 uppercase mb-2 text-center">🏆 TAP RANKING</h3>
-                {rankingBeat.slice(0,3).map((item, i) => (
-                  <div key={i} className="flex justify-between font-mono bg-zinc-950/40 p-1.5 rounded mb-1"><span>{i+1}. {item.name}</span><span className="text-purple-400 font-bold">{item.score} pt</span></div>
-                ))}
-              </div>
-              <div className="p-4 bg-zinc-900/20 border border-zinc-900 rounded-xl">
-                <h3 className="text-[10px] font-bold text-blue-400 uppercase mb-2 text-center">🏆 MEMORY TIME RANKING</h3>
-                {rankingMemory.slice(0,3).map((item, i) => (
-                  <div key={i} className="flex justify-between font-mono bg-zinc-950/40 p-1.5 rounded mb-1"><span>{i+1}. {item.name}</span><span className="text-blue-400 font-bold">{item.textScore || `${item.score}秒`}</span></div>
-                ))}
-              </div>
-              <div className="p-4 bg-zinc-900/20 border border-zinc-900 rounded-xl">
-                <h3 className="text-[10px] font-bold text-red-400 uppercase mb-2 text-center">🏆 デスローレット 生存記録</h3>
-                {rankingRoulette.slice(0,3).map((item, i) => (
-                  <div key={i} className="flex justify-between font-mono bg-zinc-950/40 p-1.5 rounded mb-1"><span>{i+1}. {item.name}</span><span className="text-red-400 font-bold">{item.textScore || `${item.score}枚`}</span></div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* GAME 01 画面 */}
-        {activeGame === "beat" && (
-          <div className="w-full max-w-md mx-auto flex flex-col justify-center">
-            <div className="w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[50vh] overflow-hidden rounded-2xl">
-              <div className="absolute top-3 left-3 right-3 z-30 bg-zinc-900/90 p-3 rounded-xl border border-white/5 backdrop-blur-md flex items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex justify-between text-[11px] font-mono font-bold mb-1"><span className="text-zinc-300">LIFE: {health}/100</span><span className="text-purple-400 font-black">LV.{level}</span></div>
-                  <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden">
-                    <div className={`h-full ${health > 50 ? "bg-emerald-500" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"}`} style={{ width: `${health}%` }} />
-                  </div>
-                </div>
-              </div>
-              <div className="absolute top-16 right-3 font-mono text-xs bg-black/60 px-3 py-1 rounded-full text-purple-300 font-black">SCORE: {score}</div>
-              <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono w-full">
-                {combo > 0 && <div className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 tracking-wider">{combo} COMBO</div>}
-                {effect && <div className="text-2xl font-black text-yellow-400 tracking-widest">{effect}</div>}
-              </div>
-              <div className="absolute bottom-20 left-0 right-0 h-[2px] bg-zinc-800/50 pointer-events-none" />
-              <div className="absolute inset-0 grid grid-cols-2 pt-16">
-                {lanes.map((lane) => (
-                  <div key={lane} className="relative border-r border-zinc-900/40 last:border-none flex justify-center">
-                    <div className="absolute bottom-14 w-14 h-14 rounded-full border-2 border-zinc-800 flex items-center justify-center"><span className="text-[10px] text-zinc-700 font-bold">TAP</span></div>
-                    {notes.filter((n) => n.lane === lane).map((n) => (
-                      <div key={n.id} style={{ top: `${n.y}%` }} className={`absolute w-12 h-12 rounded-full flex items-center justify-center font-black text-xs text-white ${n.isHeal ? "bg-gradient-to-br from-emerald-400 to-teal-500" : "bg-gradient-to-br from-purple-500 to-blue-600"}`}>{n.isHeal ? "💚" : "14"}</div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <footer className="grid grid-cols-2 gap-2 mt-4">
-              <button onTouchStart={() => handleBeatTap(0)} onClick={() => handleBeatTap(0)} className="h-24 bg-zinc-900/60 border border-white/5 active:bg-purple-900/40 rounded-2xl font-bold text-zinc-500">LEFT</button>
-              <button onTouchStart={() => handleBeatTap(1)} onClick={() => handleBeatTap(1)} className="h-24 bg-zinc-900/60 border border-white/5 active:bg-purple-900/40 rounded-2xl font-bold text-zinc-500">RIGHT</button>
-            </footer>
-          </div>
-        )}
-
-        {/* GAME 02 画面（神経衰弱） */}
-        {activeGame === "memory" && (
-          <div className="w-full max-w-xl mx-auto flex flex-col justify-center">
-            <div className="flex justify-between items-center bg-zinc-900/50 p-4 rounded-2xl border border-white/5 mb-4">
-              <span className="text-xs text-zinc-400 font-bold font-mono">⏱ TIME ATTACK</span>
-              <span className="text-2xl font-black font-mono text-blue-400">{memoryTime} <span className="text-xs text-zinc-400">秒</span></span>
-            </div>
-            <div className="grid grid-cols-4 gap-2 bg-zinc-950/60 p-3 rounded-2xl border border-zinc-900">
-              {cards.map((card, index) => (
-                <div key={card.id} onClick={() => handleCardClick(index)} className={`aspect-[3/4] relative rounded-xl border transition-all transform duration-300 ${card.isMatched ? "opacity-20 pointer-events-none scale-90 border-transparent" : ""}`}>
-                  <div className={`w-full h-full relative transition-transform duration-500 style-3d ${card.isFlipped || card.isMatched ? "rotate-y-180" : ""}`}>
-                    <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-zinc-800 border border-white/10 rounded-xl flex items-center justify-center backface-hidden shadow-lg"><span className="text-xs font-black text-blue-400">14</span></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-950/80 to-slate-900 border border-blue-400/40 rounded-xl flex flex-col items-center justify-center rotate-y-180 backface-hidden p-1">
-                      <div className="w-6 h-6 rounded-full bg-zinc-800 mb-1 flex items-center justify-center text-[10px]">👤</div>
-                      <span className="text-[9px] md:text-xs font-black text-center text-white truncate w-full">{card.name}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------ */}
-        {/* GAME 03 プレイ画面（デス・ローレット） */}
-        {/* ------------------------------------------ */}
-        {activeGame === "roulette" && !rouletteOver && (
-          <div className="w-full max-w-md mx-auto text-center space-y-4">
-            
-            {/* カウンター・メーターボード */}
-            <div className="bg-zinc-900/80 p-5 rounded-3xl border border-white/10 backdrop-blur-md relative overflow-hidden shadow-2xl">
-              <div className="absolute inset-0 bg-gradient-to-b from-red-600/10 to-transparent pointer-events-none" />
-
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs text-zinc-400 font-mono font-bold tracking-widest">🃏 SURVIVED COUNTER</span>
-                <button 
-                  onClick={() => setShowRouletteRuleModal(true)}
-                  className="text-[10px] text-blue-400 bg-blue-950/40 border border-blue-900/50 px-2 py-0.5 rounded-full font-bold hover:bg-blue-900/40"
+        {/* 左・中央列: ゲーム画面 */}
+        <div className="lg:col-span-2 flex flex-col space-y-6">
+          {!isNameEntered ? (
+            /* 名前入力画面 */
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center my-auto shadow-2xl">
+              <div className="w-16 h-16 bg-purple-600/10 border border-purple-500/30 rounded-2xl flex items-center justify-center text-3xl mb-4">🕹️</div>
+              <h2 className="text-2xl font-bold mb-2">ゲームセンターへようこそ</h2>
+              <p className="text-sm text-zinc-400 mb-6 max-w-sm">オンラインランキングに対応しています。名前を入力してゲームを始めましょう！</p>
+              <div className="w-full max-w-md space-y-3">
+                <input
+                  type="text"
+                  maxLength={10}
+                  placeholder="プレイヤー名を入力 (最大10文字)"
+                  value={playerName}
+                  onChange={(e) => setPlayerName(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3.5 text-center font-bold tracking-wide focus:outline-none focus:border-purple-500 transition-colors placeholder:text-zinc-600"
+                />
+                <button
+                  disabled={!playerName.trim()}
+                  onClick={() => setIsNameEntered(true)}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:opacity-40 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-lg active:scale-[0.98]"
                 >
-                  ❓ ルールを表示
+                  ゲームスタート
+                </button>
+              </div>
+            </div>
+          ) : activeGame === "none" ? (
+            /* ゲーム選択メニュー */
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-auto">
+              {/* 音ゲー */}
+              <div className="bg-zinc-900 border border-zinc-800 hover:border-purple-500/50 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-xl">
+                <div>
+                  <div className="text-3xl mb-4 group-hover:scale-110 transition-transform origin-left">🎹</div>
+                  <h3 className="text-lg font-bold mb-1">TAP BEAT</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">落ちてくるノーツをタイミングよく叩く爽快リズムゲーム。</p>
+                </div>
+                <button onClick={startBeatGame} className="mt-6 w-full bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 text-purple-300 hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+                  遊ぶ
                 </button>
               </div>
 
-              <p className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider">現在の合計値</p>
-              <h2 className={`text-6xl font-black font-mono my-1 tracking-tighter transition-all ${
-                rouletteTotal >= 11 ? "text-red-500 animate-pulse scale-105" : rouletteTotal >= 7 ? "text-amber-400" : "text-emerald-400"
-              }`}>
-                {rouletteTotal} <span className="text-xs text-zinc-500 font-normal">/ 14</span>
-              </h2>
-
-              <p className="text-zinc-400 text-xs font-mono">現在までに <span className="text-white font-black text-sm">{rouletteCount}</span> 枚安全にドロー成功</p>
-              
-              {isDoubleIcon && (
-                <div className="mt-3 p-1.5 bg-red-950/60 border border-red-500 text-red-400 text-[10px] font-black rounded-lg uppercase tracking-widest animate-bounce">
-                  ⚠️ WARNING: 次のメンバーの数値が【2倍】になる呪い発動中！ ⚠️
+              {/* 神経衰弱 */}
+              <div className="bg-zinc-900 border border-zinc-800 hover:border-pink-500/50 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-xl">
+                <div>
+                  <div className="text-3xl mb-4 group-hover:scale-110 transition-transform origin-left">🃏</div>
+                  <h3 className="text-lg font-bold mb-1">MEMORY MATCH</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">配属された同期メンバーの顔と名前を一致させる記憶力ゲーム。</p>
                 </div>
-              )}
+                <button onClick={startMemoryGame} className="mt-6 w-full bg-pink-600/20 hover:bg-pink-600 border border-pink-500/30 text-pink-300 hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+                  遊ぶ
+                </button>
+              </div>
+
+              {/* ルーレット */}
+              <div className="bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 rounded-2xl p-6 flex flex-col justify-between transition-all group shadow-xl">
+                <div>
+                  <div className="text-3xl mb-4 group-hover:scale-110 transition-transform origin-left">🎰</div>
+                  <h3 className="text-lg font-bold mb-1">TEAM ROULETTE</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">3回ルーレットを回して最強の同期チームを結成し、合計ポイントを競う運ゲー。</p>
+                </div>
+                <button onClick={startRouletteGame} className="mt-6 w-full bg-amber-600/20 hover:bg-amber-600 border border-amber-500/30 text-amber-300 hover:text-white font-bold py-2.5 rounded-xl transition-all text-sm">
+                  遊ぶ
+                </button>
+              </div>
             </div>
+          ) : activeGame === "beat" ? (
+            /* 音ゲー画面 */
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center shadow-2xl relative overflow-hidden">
+              <div className="w-full flex justify-between items-center mb-4 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                <div className="text-sm font-bold text-zinc-400">SCORE: <span className="text-purple-400 text-lg font-black">{beatScore}</span></div>
+                <div className="text-sm font-bold text-zinc-400">COMBO: <span className="text-pink-400 text-lg font-black">{beatCombo}</span></div>
+                <div className="text-sm font-bold text-zinc-400">LIFE: <span className="text-emerald-400 text-lg font-black">{"❤️".repeat(life)}</span></div>
+              </div>
 
-            {/* 中央：今引いたメンバーカード */}
-            <div className="min-h-[160px] flex items-center justify-center">
-              {currentMember ? (
-                <div className="w-full max-w-[220px] aspect-[2/3] bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-900 border-2 border-red-500/50 rounded-2xl p-4 flex flex-col justify-between items-center shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg border border-white/10">👤</div>
-                  
-                  <div className="text-center my-1">
-                    <h3 className="text-base font-black text-white">{currentMember.name}</h3>
-                    <p className={`text-xl font-mono font-black mt-0.5 ${currentMember.value < 0 ? "text-emerald-400" : currentMember.value === 0 ? "text-zinc-400" : "text-red-400"}`}>
-                      {currentMember.value > 0 ? `+${currentMember.value}` : currentMember.value}
-                    </p>
-                  </div>
-
-                  <p className="text-[10px] text-zinc-300 bg-black/40 p-2 rounded-xl w-full text-center leading-relaxed border border-white/5">
-                    {currentMember.effectText}
-                  </p>
-                </div>
-              ) : (
-                <div className="w-full max-w-[220px] aspect-[2/3] bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-600 text-xs font-bold">
-                  ボタンを押して山札から引いてください
-                </div>
-              )}
-            </div>
-
-            {/* ドローボタン */}
-            <button
-              onClick={drawCard}
-              className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-black rounded-2xl shadow-[0_4px_20px_rgba(239,68,68,0.4)] tracking-widest text-sm"
-            >
-              カードを1枚ドローする 💥
-            </button>
-
-            {/* 📋 下部：リアルタイム特殊能力一覧（カンペ用スクロールエリア） */}
-            <div className="text-left bg-zinc-900/40 border border-white/5 rounded-2xl p-3">
-              <p className="text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider flex items-center gap-1">
-                <span>📋</span> 14期生 特殊能力早見表（カンペ）
-              </p>
-              <div className="max-h-[140px] overflow-y-auto space-y-1.5 pr-1 text-[11px] font-sans scrollbar-thin">
-                {ROULETTE_MEMBERS.map((m, i) => (
-                  <div key={i} className="flex items-start justify-between bg-zinc-950/50 p-1.5 rounded border border-white/5 gap-2">
-                    <div className="flex items-center gap-1.5 min-w-[90px]">
-                      <span className="text-zinc-400 font-bold">{m.name}</span>
-                    </div>
-                    <div className="flex-1 text-zinc-400 text-right truncate">
-                      {m.effectText}
-                    </div>
-                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold text-center shrink-0 min-w-[65px] ${
-                      m.value > 3 ? "bg-red-950 text-red-400" : m.value < 0 ? "bg-emerald-950 text-emerald-400" : "bg-zinc-800 text-zinc-300"
-                    }`}>
-                      {m.abilityLabel}
-                    </span>
+              {/* 落ちてくるエリア */}
+              <div className="w-full max-w-md h-80 bg-zinc-950 rounded-xl relative border border-zinc-800 overflow-hidden flex">
+                {[0, 1, 2, 3].map((lane) => (
+                  <div key={lane} className="flex-1 border-r border-zinc-900/50 last:border-0 relative h-full bg-gradient-to-b from-transparent to-zinc-900/20">
+                    {notes.filter((n) => n.lane === lane).map((note) => (
+                      <div
+                        key={note.id}
+                        style={{ top: `${note.y}%` }}
+                        className={`absolute left-1/2 -translate-x-1/2 w-10 h-6 rounded-full shadow-lg flex items-center justify-center text-[10px] font-black transition-all ${
+                          note.isHeal ? "bg-gradient-to-r from-emerald-500 to-teal-500 animate-pulse text-white" : "bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+                        }`}
+                      >
+                        {note.isHeal ? "HEAL" : "TAP"}
+                      </div>
+                    ))}
+                    {/* 判定ラインのガイド線 */}
+                    <div className="absolute bottom-[15%] left-0 right-0 h-[2px] bg-purple-500/30 dashed" />
                   </div>
                 ))}
               </div>
-            </div>
 
-          </div>
-        )}
-
-        {/* ------------------------------------------ */}
-        {/* GAME 03 開始前ルール説明モーダル */}
-        {/* ------------------------------------------ */}
-        {showRouletteRuleModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
-              <div className="w-12 h-12 rounded-full bg-red-950 border border-red-500/30 flex items-center justify-center mx-auto text-xl">💀</div>
-              <h3 className="text-lg font-black text-red-400 tracking-wide">14th デス・ローレット ルール</h3>
-              
-              <div className="text-left text-xs text-zinc-300 space-y-2.5 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-white/5">
-                <p>① 山札から順番に14期のカードを引いていきます。</p>
-                <p>② カードに書かれた数値が場の合計値にどんどん蓄積されます。</p>
-                <p>③ 合計値が<span className="text-red-400 font-bold">【14】を超えた瞬間に爆発</span>して即ゲームオーバー！</p>
-                <p>④ メンバーごとに「数値を減らす」「次を2倍にする」などの<span className="text-yellow-400 font-bold">特殊能力</span>があります。</p>
+              {/* タップボタン */}
+              <div className="w-full max-w-md grid grid-cols-4 gap-2 mt-4">
+                {[0, 1, 2, 3].map((lane) => (
+                  <button
+                    key={lane}
+                    onMouseDown={() => handleLaneTap(lane)}
+                    onTouchStart={(e) => { e.preventDefault(); handleLaneTap(lane); }}
+                    className="bg-zinc-800 active:bg-purple-600 border-b-4 border-zinc-950 active:border-purple-800 py-6 rounded-xl font-black transition-all text-zinc-400 active:text-white"
+                  >
+                    DFJK[lane]
+                  </button>
+                ))}
               </div>
 
-              <button
-                onClick={() => setShowRouletteRuleModal(false)}
-                className="w-full py-3 bg-red-600 text-white font-black rounded-xl text-xs tracking-widest shadow-lg hover:bg-red-500"
-              >
-                了解、死線をくぐる ▷
+              <button onClick={() => setActiveGame("none")} className="mt-6 text-xs text-zinc-500 hover:text-zinc-300 underline">
+                メニューに戻る(進捗は破棄されます)
               </button>
             </div>
-          </div>
-        )}
+          ) : activeGame === "memory" ? (
+            /* 神経衰弱画面 */
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center shadow-2xl">
+              <div className="w-full flex justify-between items-center mb-6 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                <div className="text-sm font-bold text-zinc-400">手数: <span className="text-pink-400 text-lg font-black">{memoryMoves}</span></div>
+                <div className="text-sm font-bold text-zinc-400">経過時間: <span className="text-amber-400 text-lg font-black">{memoryTime} 秒</span></div>
+              </div>
 
-        {/* 結果発表画面 */}
-        {memoryOver && (
-          <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full">
-            <p className="text-blue-400 font-mono text-xs tracking-widest uppercase mb-1 font-bold">🎯 GAME CLEAR!!</p>
-            <h2 className="text-2xl font-black mb-6">全メンバー発見！</h2>
-            <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 font-mono mb-6">
-              <p className="text-zinc-500 text-xs">RECORD TIME</p>
-              <p className="text-3xl font-black text-yellow-400 mt-1">{memoryTime} <span className="text-xs text-zinc-400">秒</span></p>
+              <div className="grid grid-cols-4 gap-2.5 w-full max-w-md">
+                {cards.map((card) => (
+                  <div
+                    key={card.id}
+                    onClick={() => handleCardClick(card.id)}
+                    className={`aspect-square rounded-xl flex items-center justify-center font-bold text-xs cursor-pointer transition-all duration-300 transform border select-none ${
+                      card.isFlipped || card.isMatched
+                        ? "bg-gradient-to-br from-pink-600 to-purple-600 border-pink-400 text-white rotate-0 shadow-lg"
+                        : "bg-zinc-800 border-zinc-700 text-transparent hover:bg-zinc-700 -rotate-3"
+                    }`}
+                  >
+                    {(card.isFlipped || card.isMatched) && (
+                      <span className="text-center px-1 break-all leading-tight">{card.name}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button onClick={() => setActiveGame("none")} className="mt-6 text-xs text-zinc-500 hover:text-zinc-300 underline">
+                メニューに戻る
+              </button>
             </div>
-            <button onClick={() => setMemoryOver(false)} className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl text-sm">メニューに戻る</button>
-          </div>
-        )}
+          ) : (
+            /* ルーレット画面 */
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col items-center shadow-2xl">
+              <div className="w-full flex justify-between items-center mb-6 bg-zinc-950 p-3 rounded-xl border border-zinc-800">
+                <div className="text-sm font-bold text-zinc-400">結成人数: <span className="text-amber-400 text-lg font-black">{rouletteCount} / 3人</span></div>
+                <div className="text-sm font-bold text-zinc-400">チーム戦闘力: <span className="text-orange-400 text-lg font-black">{totalRouletteScore} pt</span></div>
+              </div>
 
-        {rouletteOver && (
-          <div className="p-6 bg-gradient-to-b from-red-950/40 to-zinc-900/40 border border-red-500/30 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full">
-            <p className="text-red-500 font-mono text-sm tracking-widest uppercase mb-1 font-black">💥 BOMB!!!! 💥</p>
-            <h2 className="text-2xl font-black mb-2">14を超えて爆発しました</h2>
-            <p className="text-zinc-400 text-xs mb-6">最後に引いたメンバーによってトドメが刺されました</p>
-            <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 font-mono mb-6">
-              <p className="text-zinc-500 text-xs">生存枚数記録</p>
-              <p className="text-3xl font-black text-red-400 mt-1">{rouletteCount} <span className="text-xs text-zinc-400">枚</span></p>
-              <p className="text-zinc-600 text-[10px] mt-2">最終合計値: {rouletteTotal}</p>
+              {/* ルーレットの液晶風ディスプレイ */}
+              <div className="w-full max-w-sm bg-zinc-950 border-2 border-zinc-800 p-8 rounded-2xl text-center mb-6 min-h-[160px] flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
+                {selectedMember ? (
+                  <div className="animate-fade-in">
+                    <span className="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-bold mb-2 inline-block">
+                      {selectedMember.abilityLabel}
+                    </span>
+                    <h3 className="text-2xl font-black text-white mb-1">{selectedMember.name}</h3>
+                    <div className="text-xl font-extrabold text-orange-400 mb-2">戦闘力: {selectedMember.value > 0 ? `+${selectedMember.value}` : selectedMember.value}</div>
+                    <p className="text-xs text-zinc-400 max-w-xs">{selectedMember.effectText}</p>
+                  </div>
+                ) : (
+                  <div className="text-zinc-600 font-bold tracking-widest text-sm">ROULETTE DISPLAY</div>
+                )}
+              </div>
+
+              {rouletteCount < 3 ? (
+                <button
+                  disabled={isSpinning}
+                  onClick={spinRoulette}
+                  className="w-full max-w-xs bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 disabled:opacity-40 text-black font-black py-4 px-6 rounded-xl transition-all text-base shadow-lg active:scale-95"
+                >
+                  {isSpinning ? "スロット回転中..." : "ルーレットを回す"}
+                </button>
+              ) : (
+                <div className="text-center w-full">
+                  <div className="text-sm font-bold text-emerald-400 mb-4 animate-bounce">🎉 チーム結成完了！ランキングに登録されました</div>
+                  <button onClick={startRouletteGame} className="w-full max-w-xs bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 px-6 rounded-xl transition-all text-sm">
+                    もう一度遊ぶ
+                  </button>
+                </div>
+              )}
+
+              <button onClick={() => setActiveGame("none")} className="mt-6 text-xs text-zinc-500 hover:text-zinc-300 underline">
+                メニューに戻る
+              </button>
             </div>
-            <button onClick={() => setRouletteOver(false)} className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl text-sm">メニューに戻る</button>
-          </div>
-        )}
+          )}
+        </div>
 
-      </div>
+        {/* 右列: リアルタイム・オンラインランキングボード */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 h-fit shadow-xl flex flex-col space-y-6">
+          <div className="flex items-center space-x-2 pb-2 border-b border-zinc-800">
+            <span className="text-lg">🏆</span>
+            <h2 className="text-sm font-black tracking-wider text-zinc-300 uppercase">LIVE LEADERBOARD</h2>
+          </div>
+
+          {/* 音ゲー枠 */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-purple-400 flex items-center space-x-1">
+              <span>🎹</span> <span>TAP BEAT RANKING</span>
+            </div>
+            <div className="bg-zinc-950 rounded-xl p-3 border border-zinc-900 space-y-1.5 min-h-[140px]">
+              {rankingBeat.length === 0 ? (
+                <div className="text-xs text-zinc-600 text-center py-10 font-medium">データがありません</div>
+              ) : (
+                rankingBeat.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs border-b border-zinc-900/60 pb-1.5 last:border-0 last:pb-0">
+                    <span className="font-semibold text-zinc-300 truncate max-w-[120px]">{idx + 1}. {item.name}</span>
+                    <span className="font-mono font-bold text-purple-400">{item.score} pt</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* 神経衰弱枠 */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-pink-400 flex items-center space-x-1">
+              <span>🃏</span> <span>MEMORY RANKING (手数少順)</span>
+            </div>
+            <div className="bg-zinc-950 rounded-xl p-3 border border-zinc-900 space-y-1.5 min-h-[140px]">
+              {rankingMemory.length === 0 ? (
+                <div className="text-xs text-zinc-600 text-center py-10 font-medium">データがありません</div>
+              ) : (
+                rankingMemory.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs border-b border-zinc-900/60 pb-1.5 last:border-0 last:pb-0">
+                    <span className="font-semibold text-zinc-300 truncate max-w-[120px]">{idx + 1}. {item.name}</span>
+                    <span className="font-mono font-bold text-pink-400">{item.textScore || `${item.score}手`}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* ルーレット枠 */}
+          <div className="space-y-2">
+            <div className="text-xs font-bold text-amber-400 flex items-center space-x-1">
+              <span>🎰</span> <span>TEAM ROULETTE RANKING</span>
+            </div>
+            <div className="bg-zinc-950 rounded-xl p-3 border border-zinc-900 space-y-1.5 min-h-[140px]">
+              {rankingRoulette.length === 0 ? (
+                <div className="text-xs text-zinc-600 text-center py-10 font-medium">データがありません</div>
+              ) : (
+                rankingRoulette.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center text-xs border-b border-zinc-900/60 pb-1.5 last:border-0 last:pb-0">
+                    <span className="font-semibold text-zinc-300 truncate max-w-[120px]">{idx + 1}. {item.name}</span>
+                    <span className="font-mono font-bold text-amber-400">{item.score} pt</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   );
 }
