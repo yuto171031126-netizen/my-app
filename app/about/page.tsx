@@ -22,37 +22,50 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6 md:p-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400">
-          １４期一覧 ({members.length} Members)
-        </h1>
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans relative overflow-hidden">
+      
+      {/* トップページと共通のゆらゆら動く背景の光 */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full animate-float pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-float [animation-delay:-4s] pointer-events-none" />
+
+      {/* ふわっと浮き上がるメインコンテンツ */}
+      <main className="max-w-5xl mx-auto px-6 py-12 relative z-10 animate-fade-in">
         
-        <div className="grid gap-3">
+        <header className="text-center mb-16">
+          <p className="text-purple-400 font-bold tracking-widest text-sm uppercase mb-3">MEMBERS</p>
+          <h1 className="text-4xl md:text-5xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-purple-300">
+            14期紹介
+          </h1>
+          <p className="text-zinc-400 max-w-md mx-auto text-sm leading-relaxed">
+            はもねぴあ14期を形づくる17人のメンバー。それぞれの歌声と想いが、このステージで一つになります。
+          </p>
+        </header>
+
+        {/* 高級感のあるグリッドレイアウト（すりガラス効果つき） */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {members.map((member, index) => (
-            <div key={index} className={`p-4 bg-zinc-900 border ${member.path !== "#" ? "border-zinc-700 hover:border-purple-500" : "border-zinc-800"} rounded-xl flex items-center justify-between transition-all`}>
-              <div>
-                {/* ここでリンクかただの文字かを判定しています */}
-                {member.path !== "#" ? (
-                  <a href={member.path} className="text-lg font-bold hover:text-purple-400 transition-colors block">
-                    {member.name} ▷
-                  </a>
-                ) : (
-                  <span className="text-lg font-bold text-zinc-600">{member.name}</span>
-                )}
-                <p className="text-purple-400/80 text-sm font-medium">あだ名：{member.nickname}</p>
+            <div 
+              key={index} 
+              className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-zinc-800/60 transition-all duration-500 group shadow-lg text-center"
+            >
+              <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
+                <span className="text-purple-400 font-bold text-sm">14</span>
               </div>
-              <div className="text-right">
-                <span className="px-3 py-1 bg-zinc-800 rounded-full text-[10px] uppercase tracking-wider text-zinc-400">
-                  {member.role}
-                </span>
-              </div>
+              <h2 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
+                {member.name}
+              </h2>
+              <p className="text-zinc-500 text-xs mt-1 tracking-wider uppercase">
+                {member.role}
+              </p>
             </div>
           ))}
         </div>
 
-        <a href="/" className="inline-block mt-12 text-zinc-500 underline text-sm">← ホームに戻る</a>
-      </div>
+      </main>
+
+      <footer className="text-center py-12 text-zinc-600 text-xs relative z-10">
+        &copy; 2027 はもねぴあ 14期 卒業ライブ特設サイト
+      </footer>
     </div>
   );
 }
