@@ -24,11 +24,10 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans relative overflow-hidden">
       
-      {/* トップページと共通のゆらゆら動く背景の光 */}
+      {/* ゆらゆら動く背景の光 */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full animate-float pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-float [animation-delay:-4s] pointer-events-none" />
 
-      {/* ふわっと浮き上がるメインコンテンツ */}
       <main className="max-w-5xl mx-auto px-6 py-12 relative z-10 animate-fade-in">
         
         <header className="text-center mb-16">
@@ -41,12 +40,13 @@ export default function AboutPage() {
           </p>
         </header>
 
-        {/* 高級感のあるグリッドレイアウト（すりガラス効果つき） */}
+        {/* div から a タグのリンクに変更してタップ可能に */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {members.map((member, index) => (
-            <div 
-              key={index} 
-              className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-zinc-800/60 transition-all duration-500 group shadow-lg text-center"
+          {members.map((member) => (
+            <a 
+              key={member.id}
+              href={`/about/${member.id}`} 
+              className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-zinc-800/60 transition-all duration-500 group shadow-lg text-center block cursor-pointer"
             >
               <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
                 <span className="text-purple-400 font-bold text-sm">14</span>
@@ -57,7 +57,7 @@ export default function AboutPage() {
               <p className="text-zinc-500 text-xs mt-1 tracking-wider uppercase">
                 {member.role}
               </p>
-            </div>
+            </a>
           ))}
         </div>
 
