@@ -32,9 +32,9 @@ export default function GamePage() {
   const [effect, setEffect] = useState<string | null>(null);
   const [ranking, setRanking] = useState<RankingItem[]>([]);
 
-  // 速度と【レベル】の管理
+  // 速度とレベルの管理
   const [speed, setSpeed] = useState(1.2); 
-  const [level, setLevel] = useState(1); // 初期レベルは1
+  const [level, setLevel] = useState(1); 
 
   const nextNoteId = useRef(0);
   const gameLoopRef = useRef<number | null>(null);
@@ -55,30 +55,26 @@ export default function GamePage() {
     setNotes([]);
     setHealth(100); 
     setSpeed(1.2);  
-    setLevel(1); // レベル1リセット
+    setLevel(1); 
     setGameOver(false);
     setGameStarted(true);
   };
 
-  // 5秒ごとにレベルアップ ＆ 速度アップするシステム
+  // 5秒ごとにレベルアップ
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
     const levelTimer = setInterval(() => {
       setLevel((prevLevel) => {
         const nextLevel = prevLevel + 1;
-        
-        // レベル上昇に合わせてスピードもアップ
         setSpeed((prevSpeed) => {
           const nextSpeed = prevSpeed + 0.15;
           return nextSpeed > 4.0 ? 4.0 : nextSpeed; 
         });
-
-        // 画面に「LEVEL UP!」をぬるっと出すエフェクト
         setEffect(`LEVEL ${nextLevel}!`);
         return nextLevel;
       });
-    }, 5000); // 5秒ごとに発動
+    }, 5000);
 
     return () => clearInterval(levelTimer);
   }, [gameStarted, gameOver]);
@@ -122,7 +118,7 @@ export default function GamePage() {
           .map((note) => ({ ...note, y: note.y + speed })) 
           .filter((note) => {
             if (note.y > 95) {
-              setCombo(0);
+              setCombo(0); // 見逃したらコンボもストップ！
               if (!note.isHeal) {
                 setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
               }
@@ -133,7 +129,7 @@ export default function GamePage() {
       );
 
       const now = Date.now();
-      const sampleInterval = Math.max(300, 800 - (level - 1) * 50); // レベルが上がるほどノーツが激しく湧く
+      const sampleInterval = Math.max(300, 800 - (level - 1) * 50);
 
       if (now - lastNoteTime > sampleInterval) {
         const randomLane = Math.floor(Math.random() * lanes.length);
@@ -168,16 +164,24 @@ export default function GamePage() {
       if (targetNote.isHeal) {
         setHealth((prev) => (prev + 10 > 100 ? 100 : prev + 10));
         setEffect("HEAL +10!");
-      } else {
+      } {
         const newCombo = combo + 1;
         setCombo(newCombo);
         if (newCombo > maxCombo) setMaxCombo(newCombo);
-        // レーン成功時、コンボボーナスとは別に基本得点+10の表示イメージに合わせる
-        setScore((prev) => prev + 10 + newCombo * 5); 
-        setEffect("PERFECT!");
+        
+        // 【10コンボごとに10%スコアアップ】
+        // 1〜9コンボ: 倍率1.0（+10pt）
+        // 10〜19コンボ: 倍率1.1（+11pt）
+        // 20〜29コンボ: 倍率1.2（+12pt）...
+        const comboBonusMultiplier = 1 + Math.floor(newCombo / 10) * 0.1;
+        const basePoints = 10;
+        const addedScore = Math.floor(basePoints * comboBonusMultiplier);
+
+        setScore((prev) => prev + addedScore); 
+        setEffect(`PERFECT! +${addedScore}`);
       }
     } else {
-      setCombo(0);
+      setCombo(0); // 空振りでコンボリセット
       setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
       setEffect("MISS -10");
     }
@@ -258,58 +262,61 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* ゲームプレイ画面（UIルール説明 ＆ レベルシステム搭載） */}
+        {/* ゲームプレイ画面（UI＆レベル＆コンボボーナス完全対応） */}
         {gameStarted && (
           <div className="flex-1 w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[52vh] overflow-hidden rounded-2xl">
             
-            {/* 上部：体力バー ＆ 【LEVEL】表示 */}
+            {/* 上部：体力バー ＆ 【LEVEL表示】 */}
             <div className="absolute top-3 left-3 right-3 z-30 bg-zinc-900/90 p-3 rounded-xl border border-white/5 backdrop-blur-md flex items-center justify-between gap-4">
               <div className="flex-1">
-                <div className="flex justify-between text-[10px] font-mono font-bold mb-1">
-                  <span className="text-zinc-400">LIFE: {health}/100</span>
-                  <span className="text-zinc-500">x{speed.toFixed(1)}</span>
+                <div className="flex justify-between text-[11px] font-mono font-bold mb-1">
+                  <span className="text-zinc-300">LIFE: {health}/100</span>
+                  <span className="text-purple-400 font-black">LV.{level} (x{speed.toFixed(1)})</span>
                 </div>
-                <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
                   <div 
                     className={`h-full transition-all duration-200 ${
-                      health > 50 ? "bg-emerald-500" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"
+                      health > 50 ? "bg-gradient-to-r from-emerald-500 to-teal-400" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"
                     }`}
                     style={{ width: `${health}%` }}
                   />
                 </div>
               </div>
-              
-              {/* レベルバッジ */}
-              <div className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-center font-mono border border-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
-                <p className="text-[8px] text-purple-200 uppercase leading-none font-bold">LV</p>
-                <p className="text-base font-black text-white leading-none mt-0.5">{level}</p>
-              </div>
             </div>
 
             {/* スコア表示 */}
-            <div className="absolute top-16 right-3 font-mono text-xs bg-black/50 px-3 py-1 rounded-full border border-white/5 z-30 text-purple-300 font-bold shadow-md">
+            <div className="absolute top-18 right-3 font-mono text-xs bg-black/60 px-3 py-1.5 rounded-full border border-white/10 z-30 text-purple-300 font-black shadow-lg">
               SCORE: {score}
             </div>
 
-            {/* ゲーム中のルール早見表 (左側にスタイリッシュに配置) */}
-            <div className="absolute top-16 left-3 z-30 font-mono text-[9px] text-zinc-500 bg-zinc-950/60 backdrop-blur-sm p-2 rounded-lg border border-white/5 space-y-1 select-none pointer-events-none">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 border border-white/20" />
-                <span>通常ノーツ : <span className="text-zinc-300 font-bold">+10 pt</span></span>
+            {/* 大きくなったノーツ説明表示（左上に配置） */}
+            <div className="absolute top-18 left-3 z-30 font-mono text-xs text-zinc-300 bg-zinc-900/90 backdrop-blur-md p-2.5 rounded-xl border border-white/10 space-y-1.5 shadow-xl select-none pointer-events-none">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 border border-white/30" />
+                <span className="font-bold">通常 : <span className="text-yellow-400">+10 pt</span></span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-[6px]">💚</span>
-                <span>回復ノーツ : <span className="text-emerald-400 font-bold">+10 HP</span></span>
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-[8px] border border-white/30">💚</span>
+                <span className="font-bold">回復 : <span className="text-emerald-400">+10 HP</span></span>
               </div>
+              {combo >= 10 && (
+                <div className="text-[10px] text-purple-400 font-bold border-t border-zinc-800 pt-1">
+                  コンボボーナス: <span className="text-white font-black">+{Math.floor(combo/10)*10}%</span>
+                </div>
+              )}
             </div>
 
-            {/* 画面中央のエフェクト文字 (PERFECTやLEVEL UP!) */}
+            {/* 画面中央：判定文字 ＆ コンボ表示 */}
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono w-full">
-              {combo > 0 && <div className="text-xs text-purple-400 font-bold tracking-widest">{combo} COMBO</div>}
+              {combo > 0 && (
+                <div className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400 tracking-wider animate-scale-up">
+                  {combo} COMBO
+                </div>
+              )}
               {effect && (
-                <div className={`text-2xl font-black tracking-wider transition-all duration-100 uppercase ${
-                  effect.includes("LEVEL") ? "text-gradient bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-purple-400 to-cyan-300 scale-120 animate-bounce" :
-                  effect.includes("HEAL") ? "text-emerald-400 scale-110" : effect.includes("PERFECT") ? "text-yellow-400" : "text-red-500"
+                <div className={`text-2xl font-black tracking-widest uppercase transition-all duration-100 ${
+                  effect.includes("LEVEL") ? "bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-amber-400 to-orange-400 text-3xl animate-bounce" :
+                  effect.includes("HEAL") ? "text-emerald-400" : effect.includes("PERFECT") ? "text-yellow-400 shadow-yellow-500/20" : "text-red-500"
                 }`}>
                   {effect}
                 </div>
