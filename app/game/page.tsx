@@ -42,7 +42,7 @@ export default function GamePage() {
       // 1. ノーツを下に動かす
       setNotes((prevNotes) =>
         prevNotes
-          .map((note) => ({ ...note, y: note.y + 1.2 })) // 落ちる速度（数値を大きくすると難しくなります）
+          .map((note) => ({ ...note, y: note.y + 1.2 })) // 落ちる速度
           .filter((note) => {
             if (note.y > 95) {
               // 画面の一番下まで落ちたらミス
@@ -81,7 +81,7 @@ export default function GamePage() {
   const handleTap = (lane: number) => {
     if (!gameStarted) return;
 
-    // タップ判定の基準ライン（yが75%〜90%の間がPerfectゾーン）
+    // タップ判定の基準ライン（yが65%〜92%の間がPerfectゾーン）
     const targetNote = notes.find((note) => note.lane === lane && note.y > 65 && note.y < 92);
 
     if (targetNote) {
@@ -148,7 +148,7 @@ export default function GamePage() {
             </button>
           </div>
         ) : (
-          // 判定テキストの飛び出す位置
+          // 判定テキスト
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono">
             {combo > 0 && (
               <div className="text-xs text-purple-400 font-bold tracking-widest animate-bounce">
@@ -165,7 +165,7 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* 判定ライン（ターゲットサークル） */}
+        {/* 判定ライン */}
         <div className="absolute bottom-20 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-zinc-800 to-transparent pointer-events-none" />
         
         {/* レーンと降ってくるノーツ */}
@@ -178,7 +178,7 @@ export default function GamePage() {
                 <span className="text-[10px] text-zinc-700 font-bold">TAP</span>
               </div>
 
-              {/* このレーンに属するノーツをレンダリング */}
+              {/* ノーツの描画 */}
               {notes
                 .filter((note) => note.lane === lane)
                 .map((note) => (
@@ -188,15 +188,14 @@ export default function GamePage() {
                     className="absolute w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center font-black text-sm text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-white/20 select-none pointer-events-none transition-all duration-75"
                   >
                     14
-                  </h2> // ※div閉じタグのミス防止のため内部文字列確認
-                  // 上記の閉じタグがh2のダミーになってないか確認、divが正解
+                  </div>
                 ))}
             </div>
           ))}
         </div>
       </div>
 
-      {/* スマホ用下部タップ専用ボタン（画面下半分が丸ごとコントローラーになります） */}
+      {/* スマホ用下部タップエリア */}
       <footer className="w-full max-w-md mx-auto grid grid-cols-2 gap-2 p-4 bg-zinc-900/30 border-t border-zinc-900 relative z-10">
         <button
           onTouchStart={() => handleTap(0)}
