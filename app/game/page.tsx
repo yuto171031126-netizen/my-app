@@ -6,9 +6,9 @@ interface Note {
   id: number;
   lane: number;
   y: number;
+  isHeal: boolean; // 回復ノーツかどうかのフラグ
 }
 
-// ローカル用のランキングデータ型
 interface RankingItem {
   name: string;
   score: number;
@@ -26,23 +26,28 @@ export default function GamePage() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(30); // 制限時間30秒
+  
+  // 体力システム (100スタート)
+  const [health, setHealth] = useState(100); 
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [effect, setEffect] = useState<string | null>(null);
 
-  // ランキング（上位5位）
+  // ランキング
   const [ranking, setRanking] = useState<RankingItem[]>([]);
+
+  // 速度と経過時間の管理用
+  const [speed, setSpeed] = useState(1.2); // 初期速度
 
   const nextNoteId = useRef(0);
   const gameLoopRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number>(0);
   const lanes = [0, 1];
 
-  // アプリ起動時に保存されているランキングを読み込む
+  // ランキングの読み込み
   useEffect(() => {
     const savedRanking = localStorage.getItem("14th_game_ranking");
-    if (savedRanking) {
-      setRanking(JSON.parse(savedRanking));
-    }
+    if (savedRanking) setRanking(JSON.parse(savedRanking));
   }, []);
 
   // ゲーム開始
@@ -52,31 +57,40 @@ export default function GamePage() {
     setCombo(0);
     setMaxCombo(0);
     setNotes([]);
-    setTimeLeft(30); // 30秒セット
+    setHealth(100); // 体力全回復
+    setSpeed(1.2);  // 速度リセット
+    startTimeRef.current = Date.now();
     setGameOver(false);
     setGameStarted(true);
   };
 
-  // タイマーのカウントダウン
+  // プレイ中の時間経過による自動「速度アップ」システム
   useEffect(() => {
     if (!gameStarted || gameOver) return;
-    if (timeLeft <= 0) {
-      endGame();
-      return;
-    }
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [gameStarted, timeLeft, gameOver]);
 
-  // ゲーム終了処理とランキング更新
+    const speedTimer = setInterval(() => {
+      setSpeed((prev) => {
+        const nextSpeed = prev + 0.15; // 5秒ごとにじわじわ速度アップ
+        return nextSpeed > 4.0 ? 4.0 : nextSpeed; // 最大速度を4.0に制限（それ以上は人間不可避）
+      });
+    }, 5000);
+
+    return () => clearInterval(speedTimer);
+  }, [gameStarted, gameOver]);
+
+  // 体力が0になったらゲームオーバーにする監視
+  useEffect(() => {
+    if (gameStarted && health <= 0) {
+      endGame();
+    }
+  }, [health, gameStarted]);
+
+  // ゲーム終了処理
   const endGame = () => {
     setGameOver(true);
     setGameStarted(false);
     if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
 
-    // 新しいスコアをランキングに反映
     const newRecord: RankingItem = {
       name: playerName,
       score: score,
@@ -84,11 +98,11 @@ export default function GamePage() {
     };
 
     const updatedRanking = [...ranking, newRecord]
-      .sort((a, b) => b.score - a.score) // スコア高い順
-      .slice(0, 5); // 上位5人のみ
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
 
     setRanking(updatedRanking);
-    localStorage.setItem("14th_game_ranking", JSON.stringify(updatedRanking)); // スマホに保存
+    localStorage.setItem("14th_game_ranking", JSON.stringify(updatedRanking));
   };
 
   // ゲームメインループ
@@ -96,23 +110,43 @@ export default function GamePage() {
     if (!gameStarted || gameOver) return;
 
     let lastNoteTime = Date.now();
+    
     const updateGame = () => {
+      // 1. 現在のスピードをベースにノーツを落下させる
       setNotes((prevNotes) =>
         prevNotes
-          .map((note) => ({ ...note, y: note.y + 1.5 })) // 少し速度をアップ
+          .map((note) => ({ ...note, y: note.y + speed })) // 状態管理から現在のスピードを適用
           .filter((note) => {
             if (note.y > 95) {
+              // 一番下まで見逃したらミス！
               setCombo(0);
+              if (!note.isHeal) {
+                // 通常ノーツを見逃した時だけダメージ -10
+                setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
+              }
               return false;
             }
             return true;
           })
       );
 
+      // 2. ノーツの自動生成
       const now = Date.now();
-      if (now - lastNoteTime > 600) {
+      // スピードが上がるにつれて、ノーツの湧く間隔もちょっとずつ狭くする（最大0.3秒間隔）
+      const spawnInterval = Math.max(300, 800 - (speed - 1.2) * 200);
+
+      if (now - lastNoteTime > spawnInterval) {
         const randomLane = Math.floor(Math.random() * lanes.length);
-        const newNote: Note = { id: nextNoteId.current++, lane: randomLane, y: 0 };
+        
+        // 15%の確率で「回復ノーツ」を生成する
+        const isHealNote = Math.random() < 0.15; 
+
+        const newNote: Note = { 
+          id: nextNoteId.current++, 
+          lane: randomLane, 
+          y: 0,
+          isHeal: isHealNote
+        };
         setNotes((prev) => [...prev, newNote]);
         lastNoteTime = now;
       }
@@ -123,22 +157,33 @@ export default function GamePage() {
     return () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, speed]); // speedが変わるたびにループを最新の速度に追従させる
 
+  // タップ判定
   const handleTap = (lane: number) => {
     if (!gameStarted || gameOver) return;
     const targetNote = notes.find((note) => note.lane === lane && note.y > 65 && note.y < 92);
 
     if (targetNote) {
       setNotes((prev) => prev.filter((n) => n.id !== targetNote.id));
-      const newCombo = combo + 1;
-      setCombo(newCombo);
-      if (newCombo > maxCombo) setMaxCombo(newCombo);
-      setScore((prev) => prev + 100 + newCombo * 10);
-      setEffect("PERFECT!");
+      
+      if (targetNote.isHeal) {
+        // 【回復ノーツ成功】 体力 +10（最大100） スコアは通常
+        setHealth((prev) => (prev + 10 > 100 ? 100 : prev + 10));
+        setEffect("HEAL +10!");
+      } else {
+        // 【通常ノーツ成功】 コンボ増加 ＆ スコア加算
+        const newCombo = combo + 1;
+        setCombo(newCombo);
+        if (newCombo > maxCombo) setMaxCombo(newCombo);
+        setScore((prev) => prev + 100 + newCombo * 10);
+        setEffect("PERFECT!");
+      }
     } else {
+      // 空振りした時はコンボストップ＆ダメージ -10
       setCombo(0);
-      setEffect("MISS");
+      setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
+      setEffect("MISS -10");
     }
     setTimeout(() => setEffect(null), 300);
   };
@@ -146,16 +191,14 @@ export default function GamePage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans relative overflow-hidden flex flex-col justify-between select-none touch-none">
       
-      {/* 共通ヘッダー */}
       <header className="p-6 text-center relative z-10 border-b border-zinc-900 bg-zinc-950/60 backdrop-blur-md">
         <a href="/" className="text-zinc-500 hover:text-purple-400 text-xs absolute left-6 top-7">◁ 戻る</a>
         <h1 className="text-lg font-bold tracking-widest text-purple-400">14th ARCADE CENTER</h1>
       </header>
 
-      {/* 画面切り替えのメインエリア */}
       <div className="flex-1 max-w-md w-full mx-auto relative px-6 flex flex-col justify-center overflow-y-auto py-6">
         
-        {/* ステップ1: 名前入力画面 */}
+        {/* 名前入力 */}
         {!isNameEntered && (
           <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl text-center backdrop-blur-md">
             <h2 className="text-xl font-black mb-2">エントリーネーム</h2>
@@ -163,7 +206,7 @@ export default function GamePage() {
             <input
               type="text"
               maxLength={10}
-              placeholder="なまえを入力 (最大10文字)"
+              placeholder="なまえを入力"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
               className="w-full px-4 py-3 bg-zinc-950 border border-zinc-800 rounded-xl text-white text-center focus:outline-none focus:border-purple-500 mb-4 font-bold"
@@ -171,14 +214,14 @@ export default function GamePage() {
             <button
               onClick={() => playerName.trim() && setIsNameEntered(true)}
               disabled={!playerName.trim()}
-              className="w-full py-3 bg-purple-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl shadow-lg transition-all text-sm tracking-widest"
+              className="w-full py-3 bg-purple-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-white font-bold rounded-xl shadow-lg text-sm tracking-widest"
             >
               ゲーム選択へ ▷
             </button>
           </div>
         )}
 
-        {/* ステップ2: ミニゲーム選択 ＆ ランキング画面 */}
+        {/* ゲーム選択 ＆ ランキング */}
         {isNameEntered && !gameStarted && !gameOver && (
           <div className="space-y-6">
             <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl backdrop-blur-md text-center">
@@ -190,15 +233,12 @@ export default function GamePage() {
                 onClick={startGame}
                 className="w-full p-4 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/30 rounded-2xl text-left hover:border-purple-400 active:scale-[0.98] transition-all block mb-3"
               >
-                <div className="font-bold text-white text-sm">GAME 01: 14期 BEAT TAP</div>
-                <div className="text-zinc-400 text-xs mt-1">上から降ってくるノーツをリズムよく叩け！（制限時間: 30秒）</div>
+                <div className="font-bold text-white text-sm">GAME 01: 14期 SURVIVAL TAP</div>
+                <div className="text-zinc-400 text-xs mt-1">徐々にスピードアップ！ミスを回避して生き残れ（ライフ制）</div>
               </button>
-              <div className="w-full p-4 bg-zinc-900/20 border border-zinc-800/50 rounded-2xl text-left opacity-40 select-none">
-                <div className="font-bold text-zinc-500 text-sm">GAME 02: COMING SOON...</div>
-              </div>
             </div>
 
-            {/* TOP 5 ランキングボード */}
+            {/* ランキング表示 */}
             <div className="p-6 bg-zinc-900/20 border border-zinc-900 rounded-3xl">
               <h3 className="text-xs font-bold text-yellow-500 tracking-widest uppercase mb-4 text-center">🏆 LOCAL TOP 5 RANKING</h3>
               <div className="space-y-2">
@@ -208,7 +248,7 @@ export default function GamePage() {
                   ranking.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center bg-zinc-950/50 border border-white/5 p-3 rounded-xl font-mono">
                       <div className="flex items-center gap-3">
-                        <span className={`text-sm font-black ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-zinc-300" : idx === 2 ? "text-amber-600" : "text-zinc-600"}`}>
+                        <span className={`text-sm font-black ${idx === 0 ? "text-yellow-400" : idx === 1 ? "text-zinc-300" : "text-zinc-600"}`}>
                           {idx + 1}位
                         </span>
                         <span className="text-sm font-bold text-zinc-200">{item.name}</span>
@@ -222,31 +262,61 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* ステップ3: ゲームプレイ画面（30秒制限時間付き） */}
+        {/* ゲームプレイ画面（体力サバイバル仕様） */}
         {gameStarted && (
           <div className="flex-1 w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[50vh] overflow-hidden rounded-2xl">
-            <div className="absolute top-4 left-4 font-mono text-sm bg-black/40 px-3 py-1 rounded-full border border-white/10 z-30">
-              TIME: <span className={`font-black ${timeLeft <= 10 ? "text-red-500 animate-pulse" : "text-green-400"}`}>{timeLeft}</span>s
+            
+            {/* 上部：体力バー（HPメーター） */}
+            <div className="absolute top-4 left-4 right-4 z-30 bg-zinc-900/80 p-2 rounded-xl border border-white/5 backdrop-blur-md">
+              <div className="flex justify-between text-[10px] font-mono font-bold mb-1">
+                <span className="text-zinc-400">LIFE: {health}/100</span>
+                <span className="text-purple-400">SPEED: x{speed.toFixed(1)}</span>
+              </div>
+              <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-200 ${
+                    health > 50 ? "bg-emerald-500" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"
+                  }`}
+                  style={{ width: `${health}%` }}
+                />
+              </div>
             </div>
-            <div className="absolute top-4 right-4 font-mono text-sm bg-black/40 px-3 py-1 rounded-full border border-white/10 z-30 text-purple-300 font-bold">
+
+            {/* スコア表示 */}
+            <div className="absolute top-16 right-4 font-mono text-xs bg-black/40 px-3 py-1 rounded-full border border-white/10 z-30 text-purple-300 font-bold">
               SCORE: {score}
             </div>
 
             <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono">
               {combo > 0 && <div className="text-xs text-purple-400 font-bold tracking-widest">{combo} COMBO</div>}
-              {effect && <div className={`text-2xl font-black ${effect === "PERFECT!" ? "text-yellow-400 scale-110" : "text-zinc-600"}`}>{effect}</div>}
+              {effect && (
+                <div className={`text-xl font-black ${
+                  effect.includes("HEAL") ? "text-emerald-400 scale-110" : effect.includes("PERFECT") ? "text-yellow-400" : "text-red-500 animate-shake"
+                }`}>
+                  {effect}
+                </div>
+              )}
             </div>
 
             <div className="absolute bottom-20 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-zinc-800 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 grid grid-cols-2">
+            <div className="absolute inset-0 grid grid-cols-2 pt-16"> {/* HPバー避けるため上部パディング追加 */}
               {lanes.map((lane) => (
                 <div key={lane} className="relative border-r border-zinc-900/40 last:border-none flex justify-center">
                   <div className="absolute bottom-14 w-14 h-14 rounded-full border-2 border-zinc-800 flex items-center justify-center bg-zinc-950/20">
                     <span className="text-[10px] text-zinc-700 font-bold">TAP</span>
                   </div>
+                  
                   {notes.filter((note) => note.lane === lane).map((note) => (
-                    <div key={note.id} style={{ top: `${note.y}%` }} className="absolute w-14 h-14 bg-gradient-to-br from-purple-500 to-blue-600 rounded-full flex items-center justify-center font-black text-sm text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-white/20">
-                      14
+                    <div 
+                      key={note.id} 
+                      style={{ top: `${note.y}%` }} 
+                      className={`absolute w-14 h-14 rounded-full flex items-center justify-center font-black text-sm text-white select-none pointer-events-none ${
+                        note.isHeal 
+                          ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[0_0_15px_rgba(16,185,129,0.7)] border-2 border-white animate-pulse" 
+                          : "bg-gradient-to-br from-purple-500 to-blue-600 shadow-[0_0_15px_rgba(168,85,247,0.5)] border border-white/20"
+                      }`}
+                    >
+                      {note.isHeal ? "💚" : "14"}
                     </div>
                   ))}
                 </div>
@@ -255,15 +325,15 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* ステップ4: リザルト（結果発表）画面 */}
+        {/* 結果発表 */}
         {gameOver && (
           <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl text-center backdrop-blur-md">
-            <p className="text-red-400 font-mono text-xs tracking-widest uppercase mb-1">TIME UP!</p>
-            <h2 className="text-2xl font-black mb-6">FINISH</h2>
+            <p className="text-red-500 font-mono text-xs tracking-widest uppercase mb-1 font-bold">GAME OVER</p>
+            <h2 className="text-2xl font-black mb-6">サバイバル終了</h2>
             <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 font-mono mb-6">
               <p className="text-zinc-500 text-xs">FINAL SCORE</p>
               <p className="text-3xl font-black text-yellow-400 mt-1">{score} <span className="text-xs text-zinc-400">pt</span></p>
-              <p className="text-zinc-500 text-[10px] mt-2">MAX COMBO: {maxCombo}</p>
+              <p className="text-zinc-500 text-[10px] mt-2">最高到達速度: x{speed.toFixed(1)} / MAX COMBO: {maxCombo}</p>
             </div>
             <button
               onClick={() => setGameOver(false)}
@@ -276,7 +346,7 @@ export default function GamePage() {
 
       </div>
 
-      {/* ゲーム中の時だけ表示される下部スマホコントローラー */}
+      {/* 下部スマホコントローラー */}
       {gameStarted && (
         <footer className="w-full max-w-md mx-auto grid grid-cols-2 gap-2 p-4 bg-zinc-900/30 border-t border-zinc-900 relative z-10">
           <button onTouchStart={() => handleTap(0)} onClick={() => handleTap(0)} className="h-24 bg-zinc-900/60 border border-white/5 active:bg-purple-900/30 active:border-purple-500/50 rounded-2xl text-zinc-500 active:text-purple-300 font-bold transition-all">LEFT</button>
