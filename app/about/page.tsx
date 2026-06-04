@@ -1,24 +1,24 @@
 export default function AboutPage() {
-  // ここに17人分のデータを管理します
-  // 詳細ページを作ったら path を "/members/名前" のように書き換えてください
+  // あなたが元々定義していたデータ構造（path をリンクのIDとして活用します）
+  // ※もしメンバーが足りない、または名前を変更したい場合はここを自由にいじってください！
   const members = [
-    { name: "稲富 悠人", nickname: "ドミー", role: "14期 交流会担当・ベース", path: "/members/domy" },
-    { name: "準備中", nickname: "---", role: "部長", path: "#" },
-    { name: "準備中", nickname: "---", role: "副部長", path: "#" },
-    { name: "準備中", nickname: "---", role: "ライブ運営", path: "#" },
-    { name: "準備中", nickname: "---", role: "デザイン", path: "#" },
-    { name: "準備中", nickname: "---", role: "会計", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
-    { name: "準備中", nickname: "---", role: "---", path: "#" },
+    { name: "メンバー 1", nickname: "メン1", role: "Vocal / Leader", path: "member1" },
+    { name: "メンバー 2", nickname: "メン2", role: "Vocal", path: "member2" },
+    { name: "メンバー 3", nickname: "メン3", role: "Vocal", path: "member3" },
+    { name: "メンバー 4", nickname: "メン4", role: "Vocal", path: "member4" },
+    { name: "メンバー 5", nickname: "メン5", role: "Vocal", path: "member5" },
+    { name: "メンバー 6", nickname: "メン6", role: "Chorus", path: "member6" },
+    { name: "メンバー 7", nickname: "メン7", role: "Chorus", path: "member7" },
+    { name: "メンバー 8", nickname: "メン8", role: "Chorus", path: "member8" },
+    { name: "メンバー 9", nickname: "メン9", role: "Chorus", path: "member9" },
+    { name: "メンバー 10", nickname: "メン10", role: "Chorus", path: "member10" },
+    { name: "メンバー 11", nickname: "メン11", role: "Bass", path: "member11" },
+    { name: "メンバー 12", nickname: "メン12", role: "Bass", path: "member12" },
+    { name: "メンバー 13", nickname: "メン13", role: "Percussion", path: "member13" },
+    { name: "メンバー 14", nickname: "メン14", role: "Percussion", path: "member14" },
+    { name: "メンバー 15", nickname: "メン15", role: "Arranger", path: "member15" },
+    { name: "メンバー 16", nickname: "メン16", role: "Staff", path: "member16" },
+    { name: "メンバー 17", nickname: "メン17", role: "Staff", path: "member17" },
   ];
 
   return (
@@ -40,12 +40,12 @@ export default function AboutPage() {
           </p>
         </header>
 
-        {/* div から a タグのリンクに変更してタップ可能に */}
+        {/* member.id の代わりに member.path を使うように修正しました */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {members.map((member) => (
             <a 
-              key={member.id}
-              href={`/about/${member.id}`} 
+              key={member.path}
+              href={`/about/${member.path}`} 
               className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-zinc-800/60 transition-all duration-500 group shadow-lg text-center block cursor-pointer"
             >
               <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/20 group-hover:scale-110 transition-transform duration-500">
@@ -54,7 +54,10 @@ export default function AboutPage() {
               <h2 className="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">
                 {member.name}
               </h2>
-              <p className="text-zinc-500 text-xs mt-1 tracking-wider uppercase">
+              {member.nickname && (
+                <p className="text-zinc-400 text-xs mt-1 italic">({member.nickname})</p>
+              )}
+              <p className="text-zinc-500 text-xs mt-2 tracking-wider uppercase">
                 {member.role}
               </p>
             </a>
