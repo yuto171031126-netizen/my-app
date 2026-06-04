@@ -1,8 +1,8 @@
 export default function Home() {
-  // 当日、運営からのお礼やタイムリーなアナウンスを載せる枠
+  // 当日、開演前や終演後にタイムリーなアナウンスを載せる枠
   const liveNews = [
     { time: "LIVE INFO", title: "本日は「はもねぴあ 14期 卒業ライブ」にご来場いただきありがとうございます！" },
-    { time: "NOTICE", title: "各バンドのセトリ解説・メンバーへのメッセージボードを開放中！" },
+    { time: "NOTICE", title: "パンフレットのQRコードより、各メンバーのプロフィールや4年間の思い出ギャラリーをご覧いただけます。" },
   ];
 
   return (
@@ -39,14 +39,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* パンフレットから飛んできた人が見たいメニューグリッド */}
+        {/* 4つ（＋1）に厳選してスッキリさせたメニューグリッド */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MenuCard href="/about" title="14期生プロフィール ▷" desc="ステージに立つ17人の詳細情報・出身地・一言" />
-          <MenuCard href="/bands" title="出演バンド & セトリ解説 ▷" desc="紙面の枠を超えた、各バンドのディープな楽曲解説" />
+          <MenuCard href="/bands" title="出演バンド紹介 ▷" desc="卒業ライブを彩る各出演バンドの紹介" />
           <MenuCard href="/schedule" title="Time Schedule ▷" desc="当日の進行スケジュール・タイムテーブル" />
-          <MenuCard href="/board" title="Message Board ▷" desc="【当日限定】14期メンバーへの応援・寄せ書きボード" />
           <MenuCard href="/gallery" title="4年間の思い出ギャラリー ▷" desc="パンフレット未収録のオフショット・秘蔵写真一覧" />
-          <MenuCard href="/access" title="会場アクセス ▷" desc="中部講堂へのアクセス・帰り道の確認に" />
+          
+          {/* アクセスは横いっぱいに広げてバランスを取るデザインに */}
+          <div className="md:col-span-2">
+            <MenuCard href="/access" title="会場アクセス ▷" desc="中部講堂へのアクセス・帰り道の確認に" />
+          </div>
         </div>
       </main>
 
