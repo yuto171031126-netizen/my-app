@@ -1,5 +1,4 @@
 export default function Home() {
-  // 当日、開演前や終演後にタイムリーなアナウンスを載せる枠
   const liveNews = [
     { time: "LIVE INFO", title: "本日は「はもねぴあ 14期 卒業ライブ」にご来場いただきありがとうございます！" },
     { time: "NOTICE", title: "パンフレットのQRコードより、各メンバーのプロフィールや4年間の思い出ギャラリーをご覧いただけます。" },
@@ -8,11 +7,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-purple-500 selection:text-white relative overflow-hidden">
       
-      {/* 高級イージングで動く背景の光 */}
+      {/* 背景の光 */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 blur-[120px] rounded-full animate-float pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full animate-float [animation-delay:-5s] pointer-events-none" />
 
-      {/* ぬるっと品よく浮き上がるメインコンテンツ */}
       <main className="max-w-4xl mx-auto px-6 py-12 relative z-10 animate-fade-in">
         
         {/* ヘッダー */}
@@ -26,7 +24,7 @@ export default function Home() {
           </div>
         </header>
 
-        {/* 当日用のアナウンス枠 */}
+        {/* アナウンス枠 */}
         <section className="mb-12 p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-3xl shadow-xl">
           <h2 className="text-xs font-bold text-purple-400 tracking-widest uppercase mb-4">Live Information</h2>
           <div className="space-y-4">
@@ -39,14 +37,16 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4つ（＋1）に厳選してスッキリさせたメニューグリッド */}
+        {/* メニューグリッド */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <MenuCard href="/about" title="14期生プロフィール ▷" desc="ステージに立つ17人の詳細情報・出身地・一言" />
           <MenuCard href="/bands" title="出演バンド紹介 ▷" desc="卒業ライブを彩る各出演バンドの紹介" />
           <MenuCard href="/schedule" title="Time Schedule ▷" desc="当日の進行スケジュール・タイムテーブル" />
           <MenuCard href="/gallery" title="4年間の思い出ギャラリー ▷" desc="パンフレット未収録のオフショット・秘蔵写真一覧" />
           
-          {/* アクセスは横いっぱいに広げてバランスを取るデザインに */}
+          {/* 【予告】ミニゲーム用のボタンを先行設置！ */}
+          <MenuCard href="/game" title="14期限定ミニゲーム ▷" desc="【お楽しみ】開演までの待ち時間に遊べるミニゲーム" isGame={true} />
+
           <div className="md:col-span-2">
             <MenuCard href="/access" title="会場アクセス ▷" desc="中部講堂へのアクセス・帰り道の確認に" />
           </div>
@@ -60,14 +60,21 @@ export default function Home() {
   );
 }
 
-// メニューカード
-function MenuCard({ href, title, desc }: { href: string, title: string, desc: string }) {
+// メニューカード（スマホタップ対応版）
+function MenuCard({ href, title, desc, isGame = false }: { href: string, title: string, desc: string, isGame?: boolean }) {
   return (
     <a 
       href={href} 
-      className="p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/10 rounded-2xl hover:border-purple-500/50 hover:bg-zinc-800/60 transition-premium shadow-lg hover:-translate-y-1 block"
+      className={`p-6 bg-zinc-900/40 backdrop-blur-sm border rounded-2xl shadow-lg block select-none
+        transition-premium hover:-translate-y-1
+        ${isGame 
+          ? 'border-purple-500/30 bg-purple-950/10 hover:border-purple-400' 
+          : 'border-white/10 hover:border-purple-500/50 hover:bg-zinc-800/60'
+        }
+        active:scale-[0.98] active:border-purple-400 active:bg-purple-900/20 active:shadow-[0_0_20px_rgba(168,85,247,0.4)]
+      `}
     >
-      <h2 className="text-xl font-bold text-white">{title}</h2>
+      <h2 className={`text-xl font-bold ${isGame ? 'text-purple-300' : 'text-white'}`}>{title}</h2>
       <p className="text-zinc-400 text-sm mt-1">{desc}</p>
     </a>
   );
