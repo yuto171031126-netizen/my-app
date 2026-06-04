@@ -9,47 +9,44 @@ interface Note { id: number; lane: number; y: number; isHeal: boolean; }
 interface RankingItem { name: string; score: number; textScore?: string; date: string; }
 interface Card { id: number; memberId: number; name: string; isFlipped: boolean; isMatched: boolean; }
 
-// GAME 03: デス・ローレット用のメンバー効果定義
 interface RouletteMember {
   name: string;
-  value: number;       // 基本の加算値
-  effectText: string;  // 画面に表示するおもしろ効果テキスト
+  value: number;       
+  effectText: string;  
+  abilityLabel?: string; // 簡易ラベル用
 }
 
-// 14期メンバーリスト ＆ 特殊能力（14人分。ここを実際のメンバー名に変えると爆笑を生めます）
+// 14期メンバーリスト ＆ 特殊能力
 const ROULETTE_MEMBERS: RouletteMember[] = [
-  { name: "メンバーA", value: 3, effectText: "標準的な頼れる同期。フツーに+3される。" },
-  { name: "メンバーB", value: 5, effectText: "破壊神。一気に【+5】される重戦車。" },
-  { name: "メンバーC", value: -3, effectText: "癒やし系。なんと合計値を【-3】してくれる！" },
-  { name: "メンバーD", value: 1, effectText: "影が薄い（？）。手堅く【+1】だけで耐える。" },
-  { name: "メンバーE", value: 0, effectText: "遅刻魔。何もしてこない。まさかの【±0】！" },
-  { name: "メンバーF", value: 2, effectText: "【特殊】次の人が引くカードの数値を2倍にする呪い！" },
-  { name: "メンバーG", value: 4, effectText: "熱血漢。じわじわ追い詰める【+4】。" },
-  { name: "メンバーH", value: -2, effectText: "空気清浄機。場の数値を【-2】に下げる。" },
-  { name: "メンバーI", value: 6, effectText: "地雷。引いた瞬間【+6】。14を超えさせる天才。" },
-  { name: "メンバーJ", value: 1, effectText: "【特殊】合計値を無理やり【13】にする戦犯ムーブ。" },
-  { name: "メンバーK", value: 2, effectText: "お調子者。コソッと【+2】。" },
-  { name: "メンバーL", value: -5, effectText: "大天使。大ピンチを救う奇跡の【-5】！" },
-  { name: "メンバーM", value: 0, effectText: "【特殊】奇跡！場の合計値を【0】に完全リセット！" },
-  { name: "メンバーN", value: 3, effectText: "ドS。手堅く【+3】を押し付けてくる。" },
+  { name: "メンバーA", value: 3, effectText: "標準的な頼れる同期。フツーに+3される。", abilityLabel: "通常ドロー" },
+  { name: "メンバーB", value: 5, effectText: "破壊神。一気に【+5】される重戦車。", abilityLabel: "高火力注意" },
+  { name: "メンバーC", value: -3, effectText: "癒やし系。なんと合計値を【-3】してくれる！", abilityLabel: "回復" },
+  { name: "メンバーD", value: 1, effectText: "影が薄い（？）。手堅く【+1】だけで耐える。", abilityLabel: "微増" },
+  { name: "メンバーE", value: 0, effectText: "遅刻魔。何もしてこない。まさかの【±0】！", abilityLabel: "無害" },
+  { name: "メンバーF", value: 2, effectText: "【特殊】次の人が引くカードの数値を2倍にする呪い！", abilityLabel: "⚠️次2倍呪い" },
+  { name: "メンバーG", value: 4, effectText: "熱血漢。じわじわ追い詰める【+4】。", abilityLabel: "高火力" },
+  { name: "メンバーH", value: -2, effectText: "空気清浄機。場の数値を【-2】に下げる。", abilityLabel: "回復" },
+  { name: "メンバーI", value: 6, effectText: "地雷。引いた瞬間【+6】。14を超えさせる天才。", abilityLabel: "🚨即死級地雷" },
+  { name: "メンバーJ", value: 1, effectText: "【特殊】合計値を無理やり【13】にする戦犯ムーブ。", abilityLabel: "💣一撃リーチ" },
+  { name: "メンバーK", value: 2, effectText: "お調子者。コソッと【+2】。", abilityLabel: "小火力" },
+  { name: "メンバーL", value: -5, effectText: "大天使。大ピンチを救う奇跡の【-5】！", abilityLabel: "🌟大回復" },
+  { name: "メンバーM", value: 0, effectText: "【特殊】奇跡！場の合計値を【0】に完全リセット！", abilityLabel: "🔄完全リセット" },
+  { name: "メンバーN", value: 3, effectText: "ドS。手堅く【+3】を押し付けてくる。", abilityLabel: "通常ドロー" },
 ];
 
 const MEMORY_MEMBER_NAMES = ROULETTE_MEMBERS.map(m => m.name);
 
 export default function GamePage() {
-  // プレイヤー ＆ モード管理
   const [playerName, setPlayerName] = useState("");
   const [isNameEntered, setIsNameEntered] = useState(false);
   const [activeGame, setActiveGame] = useState<"none" | "beat" | "memory" | "roulette">("none");
 
-  // ランキングデータ（ゲームごとに分離）
+  // ランキングデータ
   const [rankingBeat, setRankingBeat] = useState<RankingItem[]>([]);
   const [rankingMemory, setRankingMemory] = useState<RankingItem[]>([]);
   const [rankingRoulette, setRankingRoulette] = useState<RankingItem[]>([]);
 
-  // ------------------------------------------
-  // GAME 01: 音ゲー用の状態
-  // ------------------------------------------
+  // GAME 01: 音ゲー用
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [maxCombo, setMaxCombo] = useState(0);
@@ -62,9 +59,7 @@ export default function GamePage() {
   const gameLoopRef = useRef<number | null>(null);
   const lanes = [0, 1];
 
-  // ------------------------------------------
-  // GAME 02: 神経衰弱用の状態
-  // ------------------------------------------
+  // GAME 02: 神経衰弱用
   const [cards, setCards] = useState<Card[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [memoryTime, setMemoryTime] = useState(0); 
@@ -73,15 +68,14 @@ export default function GamePage() {
   const [isLock, setIsLock] = useState(false); 
   const memoryTimerRef = useRef<number | null>(null);
 
-  // ------------------------------------------
-  // GAME 03: デス・ローレット用の状態
-  // ------------------------------------------
-  const [rouletteTotal, setRouletteTotal] = useState(0); // 現在の合計値
-  const [rouletteCount, setRouletteCount] = useState(0); // 生き延びて引いた枚数（これがスコア）
+  // GAME 03: デス・ローレット用
+  const [rouletteTotal, setRouletteTotal] = useState(0); 
+  const [rouletteCount, setRouletteCount] = useState(0); 
   const [currentMember, setCurrentMember] = useState<RouletteMember | null>(null);
   const [rouletteDeck, setRouletteDeck] = useState<RouletteMember[]>([]);
-  const [isDoubleIcon, setIsDoubleIcon] = useState(false); // 次の数値2倍フラグ
+  const [isDoubleIcon, setIsDoubleIcon] = useState(false); 
   const [rouletteOver, setRouletteOver] = useState(false);
+  const [showRouletteRuleModal, setShowRouletteRuleModal] = useState(false); // ルールモーダル管理
 
   // 起動時にランキング読み込み
   useEffect(() => {
@@ -250,7 +244,6 @@ export default function GamePage() {
   // GAME 03: デス・ローレット ロジック
   // ==========================================
   const startRouletteGame = () => {
-    // 山札を生成してシャッフル
     const deck = [...ROULETTE_MEMBERS].sort(() => Math.random() - 0.5);
     setRouletteDeck(deck);
     setRouletteTotal(0);
@@ -259,25 +252,23 @@ export default function GamePage() {
     setIsDoubleIcon(false);
     setRouletteOver(false);
     setActiveGame("roulette");
+    setShowRouletteRuleModal(true); // 開始時にルールを見せる
   };
 
   const drawCard = () => {
     if (rouletteOver || rouletteDeck.length === 0) return;
 
     let deck = [...rouletteDeck];
-    const picked = deck.pop()!; // 1枚引く
+    const picked = deck.pop()!; 
     
-    // 山札が空になったら新しく補充してシャッフル（無限ループ対応）
     if (deck.length === 0) {
       deck = [...ROULETTE_MEMBERS].sort(() => Math.random() - 0.5);
     }
     setRouletteDeck(deck);
     setCurrentMember(picked);
 
-    // 点数計算
     let nextValue = picked.value;
     
-    // 前の人が「2倍呪い」をかけていたら
     if (isDoubleIcon) {
       nextValue = nextValue * 2;
       setIsDoubleIcon(false);
@@ -285,34 +276,26 @@ export default function GamePage() {
 
     let nextTotal = rouletteTotal;
 
-    // 特殊能力の個別判定
     if (picked.name === "メンバーF") {
-      // 次のカード2倍フラグ
       setIsDoubleIcon(true);
       nextTotal += nextValue;
     } else if (picked.name === "メンバーJ") {
-      // 合計を強制的に13にする
       nextTotal = 13;
     } else if (picked.name === "メンバーM") {
-      // 合計をリセット
       nextTotal = 0;
     } else {
-      // 通常加算（マイナス効果も含む）
       nextTotal += nextValue;
     }
 
-    // 合計がマイナスにいかないようにガード
     if (nextTotal < 0) nextTotal = 0;
 
     setRouletteTotal(nextTotal);
 
-    // 14を超えたら即爆発！
     if (nextTotal > 14) {
       setTimeout(() => {
         endRouletteGame();
       }, 800);
     } else {
-      // 生き残ったらカウントアップ
       setRouletteCount((c) => c + 1);
     }
   };
@@ -321,7 +304,7 @@ export default function GamePage() {
     setRouletteOver(true);
     const newRecord: RankingItem = {
       name: playerName,
-      score: rouletteCount, // 何枚めくれたか
+      score: rouletteCount, 
       textScore: `${rouletteCount}枚生存`,
       date: new Date().toLocaleDateString()
     };
@@ -422,7 +405,7 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* GAME 01 画面（省略せず保持） */}
+        {/* GAME 01 画面 */}
         {activeGame === "beat" && (
           <div className="w-full max-w-md mx-auto flex flex-col justify-center">
             <div className="w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[50vh] overflow-hidden rounded-2xl">
@@ -485,58 +468,57 @@ export default function GamePage() {
         {/* GAME 03 プレイ画面（デス・ローレット） */}
         {/* ------------------------------------------ */}
         {activeGame === "roulette" && !rouletteOver && (
-          <div className="w-full max-w-md mx-auto text-center space-y-6">
+          <div className="w-full max-w-md mx-auto text-center space-y-4">
             
             {/* カウンター・メーターボード */}
-            <div className="bg-zinc-900/80 p-6 rounded-3xl border border-white/10 backdrop-blur-md relative overflow-hidden shadow-2xl">
-              
-              {/* 危険度メーターの背景演出 */}
+            <div className="bg-zinc-900/80 p-5 rounded-3xl border border-white/10 backdrop-blur-md relative overflow-hidden shadow-2xl">
               <div className="absolute inset-0 bg-gradient-to-b from-red-600/10 to-transparent pointer-events-none" />
 
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-2">
                 <span className="text-xs text-zinc-400 font-mono font-bold tracking-widest">🃏 SURVIVED COUNTER</span>
-                <span className="text-xs text-red-400 bg-red-950/50 border border-red-900 px-2 py-0.5 rounded-full font-mono font-bold">
-                  LIMIT: 14
-                </span>
+                <button 
+                  onClick={() => setShowRouletteRuleModal(true)}
+                  className="text-[10px] text-blue-400 bg-blue-950/40 border border-blue-900/50 px-2 py-0.5 rounded-full font-bold hover:bg-blue-900/40"
+                >
+                  ❓ ルールを表示
+                </button>
               </div>
 
-              {/* 現在の合計値表示 */}
-              <p className="text-xs text-zinc-500 uppercase font-mono tracking-wider">現在の合計値</p>
-              <h2 className={`text-6xl font-black font-mono my-2 tracking-tighter transition-all ${
+              <p className="text-[10px] text-zinc-500 uppercase font-mono tracking-wider">現在の合計値</p>
+              <h2 className={`text-6xl font-black font-mono my-1 tracking-tighter transition-all ${
                 rouletteTotal >= 11 ? "text-red-500 animate-pulse scale-105" : rouletteTotal >= 7 ? "text-amber-400" : "text-emerald-400"
               }`}>
-                {rouletteTotal}
+                {rouletteTotal} <span className="text-xs text-zinc-500 font-normal">/ 14</span>
               </h2>
 
               <p className="text-zinc-400 text-xs font-mono">現在までに <span className="text-white font-black text-sm">{rouletteCount}</span> 枚安全にドロー成功</p>
               
-              {/* 次が2倍の時のド派手なインジケーター */}
               {isDoubleIcon && (
-                <div className="mt-4 p-1.5 bg-red-950/60 border border-red-500 text-red-400 text-[10px] font-black rounded-lg uppercase tracking-widest animate-bounce">
+                <div className="mt-3 p-1.5 bg-red-950/60 border border-red-500 text-red-400 text-[10px] font-black rounded-lg uppercase tracking-widest animate-bounce">
                   ⚠️ WARNING: 次のメンバーの数値が【2倍】になる呪い発動中！ ⚠️
                 </div>
               )}
             </div>
 
             {/* 中央：今引いたメンバーカード */}
-            <div className="min-h-[180px] flex items-center justify-center">
+            <div className="min-h-[160px] flex items-center justify-center">
               {currentMember ? (
-                <div className="w-full max-w-[240px] aspect-[2/3] bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-900 border-2 border-red-500/50 rounded-2xl p-4 flex flex-col justify-between items-center shadow-[0_0_30px_rgba(239,68,68,0.2)] animate-scale-up">
-                  <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-lg border border-white/10">👤</div>
+                <div className="w-full max-w-[220px] aspect-[2/3] bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-900 border-2 border-red-500/50 rounded-2xl p-4 flex flex-col justify-between items-center shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-lg border border-white/10">👤</div>
                   
-                  <div className="text-center my-2">
-                    <h3 className="text-lg font-black text-white">{currentMember.name}</h3>
-                    <p className={`text-xl font-mono font-black mt-1 ${currentMember.value < 0 ? "text-emerald-400" : currentMember.value === 0 ? "text-zinc-400" : "text-red-400"}`}>
+                  <div className="text-center my-1">
+                    <h3 className="text-base font-black text-white">{currentMember.name}</h3>
+                    <p className={`text-xl font-mono font-black mt-0.5 ${currentMember.value < 0 ? "text-emerald-400" : currentMember.value === 0 ? "text-zinc-400" : "text-red-400"}`}>
                       {currentMember.value > 0 ? `+${currentMember.value}` : currentMember.value}
                     </p>
                   </div>
 
-                  <p className="text-[11px] text-zinc-400 bg-black/40 p-2 rounded-xl w-full text-center leading-relaxed border border-white/5">
+                  <p className="text-[10px] text-zinc-300 bg-black/40 p-2 rounded-xl w-full text-center leading-relaxed border border-white/5">
                     {currentMember.effectText}
                   </p>
                 </div>
               ) : (
-                <div className="w-full max-w-[240px] aspect-[2/3] bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-600 text-xs font-bold">
+                <div className="w-full max-w-[220px] aspect-[2/3] bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-600 text-xs font-bold">
                   ボタンを押して山札から引いてください
                 </div>
               )}
@@ -545,16 +527,65 @@ export default function GamePage() {
             {/* ドローボタン */}
             <button
               onClick={drawCard}
-              className="w-full py-5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black rounded-2xl shadow-[0_4px_20px_rgba(239,68,68,0.4)] active:scale-[0.98] transition-all tracking-widest text-base"
+              className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-black rounded-2xl shadow-[0_4px_20px_rgba(239,68,68,0.4)] tracking-widest text-sm"
             >
               カードを1枚ドローする 💥
             </button>
+
+            {/* 📋 下部：リアルタイム特殊能力一覧（カンペ用スクロールエリア） */}
+            <div className="text-left bg-zinc-900/40 border border-white/5 rounded-2xl p-3">
+              <p className="text-[10px] font-bold text-zinc-400 mb-2 uppercase tracking-wider flex items-center gap-1">
+                <span>📋</span> 14期生 特殊能力早見表（カンペ）
+              </p>
+              <div className="max-h-[140px] overflow-y-auto space-y-1.5 pr-1 text-[11px] font-sans scrollbar-thin">
+                {ROULETTE_MEMBERS.map((m, i) => (
+                  <div key={i} className="flex items-start justify-between bg-zinc-950/50 p-1.5 rounded border border-white/5 gap-2">
+                    <div className="flex items-center gap-1.5 min-w-[90px]">
+                      <span className="text-zinc-400 font-bold">{m.name}</span>
+                    </div>
+                    <div className="flex-1 text-zinc-400 text-right truncate">
+                      {m.effectText}
+                    </div>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold text-center shrink-0 min-w-[65px] ${
+                      m.value > 3 ? "bg-red-950 text-red-400" : m.value < 0 ? "bg-emerald-950 text-emerald-400" : "bg-zinc-800 text-zinc-300"
+                    }`}>
+                      {m.abilityLabel}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 
         {/* ------------------------------------------ */}
-        {/* 結果発表画面 */}
+        {/* GAME 03 開始前ルール説明モーダル */}
         {/* ------------------------------------------ */}
+        {showRouletteRuleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+              <div className="w-12 h-12 rounded-full bg-red-950 border border-red-500/30 flex items-center justify-center mx-auto text-xl">💀</div>
+              <h3 className="text-lg font-black text-red-400 tracking-wide">14th デス・ローレット ルール</h3>
+              
+              <div className="text-left text-xs text-zinc-300 space-y-2.5 leading-relaxed bg-zinc-950 p-4 rounded-xl border border-white/5">
+                <p>① 山札から順番に14期のカードを引いていきます。</p>
+                <p>② カードに書かれた数値が場の合計値にどんどん蓄積されます。</p>
+                <p>③ 合計値が<span className="text-red-400 font-bold">【14】を超えた瞬間に爆発</span>して即ゲームオーバー！</p>
+                <p>④ メンバーごとに「数値を減らす」「次を2倍にする」などの<span className="text-yellow-400 font-bold">特殊能力</span>があります。</p>
+              </div>
+
+              <button
+                onClick={() => setShowRouletteRuleModal(false)}
+                className="w-full py-3 bg-red-600 text-white font-black rounded-xl text-xs tracking-widest shadow-lg hover:bg-red-500"
+              >
+                了解、死線をくぐる ▷
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 結果発表画面 */}
         {memoryOver && (
           <div className="p-6 bg-zinc-900/40 border border-white/10 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full">
             <p className="text-blue-400 font-mono text-xs tracking-widest uppercase mb-1 font-bold">🎯 GAME CLEAR!!</p>
@@ -568,7 +599,7 @@ export default function GamePage() {
         )}
 
         {rouletteOver && (
-          <div className="p-6 bg-gradient-to-b from-red-950/40 to-zinc-900/40 border border-red-500/30 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full animate-shake">
+          <div className="p-6 bg-gradient-to-b from-red-950/40 to-zinc-900/40 border border-red-500/30 rounded-3xl text-center backdrop-blur-md max-w-md mx-auto w-full">
             <p className="text-red-500 font-mono text-sm tracking-widest uppercase mb-1 font-black">💥 BOMB!!!! 💥</p>
             <h2 className="text-2xl font-black mb-2">14を超えて爆発しました</h2>
             <p className="text-zinc-400 text-xs mb-6">最後に引いたメンバーによってトドメが刺されました</p>
@@ -577,12 +608,7 @@ export default function GamePage() {
               <p className="text-3xl font-black text-red-400 mt-1">{rouletteCount} <span className="text-xs text-zinc-400">枚</span></p>
               <p className="text-zinc-600 text-[10px] mt-2">最終合計値: {rouletteTotal}</p>
             </div>
-            <button
-              onClick={() => setRouletteOver(false)}
-              className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl text-sm hover:bg-zinc-700 transition-all"
-            >
-              メニューに戻る
-            </button>
+            <button onClick={() => setRouletteOver(false)} className="w-full py-3 bg-zinc-800 text-white font-bold rounded-xl text-sm">メニューに戻る</button>
           </div>
         )}
 
