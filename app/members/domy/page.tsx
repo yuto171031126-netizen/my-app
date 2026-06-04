@@ -1,20 +1,41 @@
-export default function DomyPage() {
+export default function MemberProfile() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-8 font-sans">
-      <div className="max-w-2xl mx-auto bg-zinc-900 border border-zinc-800 p-8 rounded-2xl shadow-xl mt-12">
-        <span className="px-3 py-1 bg-purple-950 border border-purple-800 text-purple-300 text-xs font-bold rounded-full uppercase tracking-wider">
-          Base
-        </span>
-        <h1 className="text-3xl font-bold mt-4">稲富 悠人 (ドミー)</h1>
+    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6 md:p-12">
+      <div className="max-w-xl mx-auto bg-zinc-900 p-8 rounded-3xl border border-zinc-800 shadow-xl">
         
-        <div className="mt-6 space-y-3 text-zinc-300 border-t border-zinc-800 pt-6">
-          <p>🏠 <span className="font-semibold text-zinc-400">出身：</span>山口県下関市</p>
-          <p>🎯 <span className="font-semibold text-zinc-400">趣味：</span>株、ボウリング、テトリス</p>
+        {/* プロフィールヘッダー */}
+        <div className="mb-8 border-b border-zinc-800 pb-6">
+          <h1 className="text-3xl font-black mb-2">稲富 悠人</h1>
+          <p className="text-purple-400 font-bold text-lg">あだ名：ドミー</p>
         </div>
-        
-        <a href="/bands" className="text-purple-400 hover:text-purple-300 underline mt-8 block text-sm">
-          ← バンド・メンバー一覧に戻る
-        </a>
+
+        {/* 詳細情報 */}
+        <div className="space-y-6 text-zinc-300">
+          <div>
+            <h3 className="text-zinc-500 text-sm uppercase tracking-widest mb-1">役職</h3>
+            <p className="text-lg font-medium text-white">14期 交流会担当・ベース</p>
+          </div>
+          <div>
+            <h3 className="text-zinc-500 text-sm uppercase tracking-widest mb-1">一言メッセージ</h3>
+            <p className="leading-relaxed">卒業ライブ、最高の思い出にしましょう！みんなで作り上げましょう！</p>
+          </div>
+        </div>
+
+        {/* 戻るボタンのセット */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-10">
+          <a 
+            href="/about" 
+            className="flex-1 text-center py-3 px-4 bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-all"
+          >
+            ← メンバー紹介に戻る
+          </a>
+          <a 
+            href="/" 
+            className="flex-1 text-center py-3 px-4 bg-purple-600 hover:bg-purple-500 rounded-xl transition-all font-bold"
+          >
+            🏠 トップページへ
+          </a>
+        </div>
       </div>
     </div>
   );
