@@ -22,7 +22,7 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <a href="/about" className="group relative p-6 bg-zinc-900 border border-zinc-800 rounded-2xl hover:border-purple-500/50 transition-all duration-300 shadow-sm hover:shadow-purple-500/10">
-            <h2 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">About ▷</h2>
+            <h2 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">１４期紹介 ▷</h2>
             <p className="text-zinc-400 text-sm mt-2">卒業ライブへの想い、14期生からのご挨拶。</p>
           </a>
 

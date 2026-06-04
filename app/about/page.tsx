@@ -25,7 +25,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6 md:p-12">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400">
-          About 14th Gen ({members.length} Members)
+          １４期一覧 ({members.length} Members)
         </h1>
         
         <div className="grid gap-3">
