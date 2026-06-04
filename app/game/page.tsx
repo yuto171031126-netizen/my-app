@@ -6,7 +6,7 @@ interface Note {
   id: number;
   lane: number;
   y: number;
-  isHeal: boolean; // 回復ノーツかどうかのフラグ
+  isHeal: boolean;
 }
 
 interface RankingItem {
@@ -26,22 +26,18 @@ export default function GamePage() {
   const [maxCombo, setMaxCombo] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  
-  // 体力システム (100スタート)
   const [health, setHealth] = useState(100); 
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [effect, setEffect] = useState<string | null>(null);
-
-  // ランキング
   const [ranking, setRanking] = useState<RankingItem[]>([]);
 
-  // 速度と経過時間の管理用
-  const [speed, setSpeed] = useState(1.2); // 初期速度
+  // 速度と【レベル】の管理
+  const [speed, setSpeed] = useState(1.2); 
+  const [level, setLevel] = useState(1); // 初期レベルは1
 
   const nextNoteId = useRef(0);
   const gameLoopRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number>(0);
   const lanes = [0, 1];
 
   // ランキングの読み込み
@@ -57,35 +53,44 @@ export default function GamePage() {
     setCombo(0);
     setMaxCombo(0);
     setNotes([]);
-    setHealth(100); // 体力全回復
-    setSpeed(1.2);  // 速度リセット
-    startTimeRef.current = Date.now();
+    setHealth(100); 
+    setSpeed(1.2);  
+    setLevel(1); // レベル1リセット
     setGameOver(false);
     setGameStarted(true);
   };
 
-  // プレイ中の時間経過による自動「速度アップ」システム
+  // 5秒ごとにレベルアップ ＆ 速度アップするシステム
   useEffect(() => {
     if (!gameStarted || gameOver) return;
 
-    const speedTimer = setInterval(() => {
-      setSpeed((prev) => {
-        const nextSpeed = prev + 0.15; // 5秒ごとにじわじわ速度アップ
-        return nextSpeed > 4.0 ? 4.0 : nextSpeed; // 最大速度を4.0に制限（それ以上は人間不可避）
-      });
-    }, 5000);
+    const levelTimer = setInterval(() => {
+      setLevel((prevLevel) => {
+        const nextLevel = prevLevel + 1;
+        
+        // レベル上昇に合わせてスピードもアップ
+        setSpeed((prevSpeed) => {
+          const nextSpeed = prevSpeed + 0.15;
+          return nextSpeed > 4.0 ? 4.0 : nextSpeed; 
+        });
 
-    return () => clearInterval(speedTimer);
+        // 画面に「LEVEL UP!」をぬるっと出すエフェクト
+        setEffect(`LEVEL ${nextLevel}!`);
+        return nextLevel;
+      });
+    }, 5000); // 5秒ごとに発動
+
+    return () => clearInterval(levelTimer);
   }, [gameStarted, gameOver]);
 
-  // 体力が0になったらゲームオーバーにする監視
+  // 体力0の監視
   useEffect(() => {
     if (gameStarted && health <= 0) {
       endGame();
     }
   }, [health, gameStarted]);
 
-  // ゲーム終了処理
+  // ゲーム終了
   const endGame = () => {
     setGameOver(true);
     setGameStarted(false);
@@ -112,16 +117,13 @@ export default function GamePage() {
     let lastNoteTime = Date.now();
     
     const updateGame = () => {
-      // 1. 現在のスピードをベースにノーツを落下させる
       setNotes((prevNotes) =>
         prevNotes
-          .map((note) => ({ ...note, y: note.y + speed })) // 状態管理から現在のスピードを適用
+          .map((note) => ({ ...note, y: note.y + speed })) 
           .filter((note) => {
             if (note.y > 95) {
-              // 一番下まで見逃したらミス！
               setCombo(0);
               if (!note.isHeal) {
-                // 通常ノーツを見逃した時だけダメージ -10
                 setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
               }
               return false;
@@ -130,15 +132,11 @@ export default function GamePage() {
           })
       );
 
-      // 2. ノーツの自動生成
       const now = Date.now();
-      // スピードが上がるにつれて、ノーツの湧く間隔もちょっとずつ狭くする（最大0.3秒間隔）
-      const spawnInterval = Math.max(300, 800 - (speed - 1.2) * 200);
+      const sampleInterval = Math.max(300, 800 - (level - 1) * 50); // レベルが上がるほどノーツが激しく湧く
 
-      if (now - lastNoteTime > spawnInterval) {
+      if (now - lastNoteTime > sampleInterval) {
         const randomLane = Math.floor(Math.random() * lanes.length);
-        
-        // 15%の確率で「回復ノーツ」を生成する
         const isHealNote = Math.random() < 0.15; 
 
         const newNote: Note = { 
@@ -157,7 +155,7 @@ export default function GamePage() {
     return () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [gameStarted, gameOver, speed]); // speedが変わるたびにループを最新の速度に追従させる
+  }, [gameStarted, gameOver, speed, level]);
 
   // タップ判定
   const handleTap = (lane: number) => {
@@ -168,24 +166,22 @@ export default function GamePage() {
       setNotes((prev) => prev.filter((n) => n.id !== targetNote.id));
       
       if (targetNote.isHeal) {
-        // 【回復ノーツ成功】 体力 +10（最大100） スコアは通常
         setHealth((prev) => (prev + 10 > 100 ? 100 : prev + 10));
         setEffect("HEAL +10!");
       } else {
-        // 【通常ノーツ成功】 コンボ増加 ＆ スコア加算
         const newCombo = combo + 1;
         setCombo(newCombo);
         if (newCombo > maxCombo) setMaxCombo(newCombo);
-        setScore((prev) => prev + 100 + newCombo * 10);
+        // レーン成功時、コンボボーナスとは別に基本得点+10の表示イメージに合わせる
+        setScore((prev) => prev + 10 + newCombo * 5); 
         setEffect("PERFECT!");
       }
     } else {
-      // 空振りした時はコンボストップ＆ダメージ -10
       setCombo(0);
       setHealth((prev) => (prev - 10 < 0 ? 0 : prev - 10));
       setEffect("MISS -10");
     }
-    setTimeout(() => setEffect(null), 300);
+    setTimeout(() => setEffect(null), 400);
   };
 
   return (
@@ -234,7 +230,7 @@ export default function GamePage() {
                 className="w-full p-4 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/30 rounded-2xl text-left hover:border-purple-400 active:scale-[0.98] transition-all block mb-3"
               >
                 <div className="font-bold text-white text-sm">GAME 01: 14期 SURVIVAL TAP</div>
-                <div className="text-zinc-400 text-xs mt-1">徐々にスピードアップ！ミスを回避して生き残れ（ライフ制）</div>
+                <div className="text-zinc-400 text-xs mt-1">徐々にレベルアップ！ミスを回避して生き残れ（ライフ制）</div>
               </button>
             </div>
 
@@ -262,36 +258,58 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* ゲームプレイ画面（体力サバイバル仕様） */}
+        {/* ゲームプレイ画面（UIルール説明 ＆ レベルシステム搭載） */}
         {gameStarted && (
-          <div className="flex-1 w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[50vh] overflow-hidden rounded-2xl">
+          <div className="flex-1 w-full relative border-x border-zinc-900 bg-zinc-950/40 h-[52vh] overflow-hidden rounded-2xl">
             
-            {/* 上部：体力バー（HPメーター） */}
-            <div className="absolute top-4 left-4 right-4 z-30 bg-zinc-900/80 p-2 rounded-xl border border-white/5 backdrop-blur-md">
-              <div className="flex justify-between text-[10px] font-mono font-bold mb-1">
-                <span className="text-zinc-400">LIFE: {health}/100</span>
-                <span className="text-purple-400">SPEED: x{speed.toFixed(1)}</span>
+            {/* 上部：体力バー ＆ 【LEVEL】表示 */}
+            <div className="absolute top-3 left-3 right-3 z-30 bg-zinc-900/90 p-3 rounded-xl border border-white/5 backdrop-blur-md flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex justify-between text-[10px] font-mono font-bold mb-1">
+                  <span className="text-zinc-400">LIFE: {health}/100</span>
+                  <span className="text-zinc-500">x{speed.toFixed(1)}</span>
+                </div>
+                <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-200 ${
+                      health > 50 ? "bg-emerald-500" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"
+                    }`}
+                    style={{ width: `${health}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full transition-all duration-200 ${
-                    health > 50 ? "bg-emerald-500" : health > 20 ? "bg-amber-500" : "bg-red-500 animate-pulse"
-                  }`}
-                  style={{ width: `${health}%` }}
-                />
+              
+              {/* レベルバッジ */}
+              <div className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg text-center font-mono border border-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.3)]">
+                <p className="text-[8px] text-purple-200 uppercase leading-none font-bold">LV</p>
+                <p className="text-base font-black text-white leading-none mt-0.5">{level}</p>
               </div>
             </div>
 
             {/* スコア表示 */}
-            <div className="absolute top-16 right-4 font-mono text-xs bg-black/40 px-3 py-1 rounded-full border border-white/10 z-30 text-purple-300 font-bold">
+            <div className="absolute top-16 right-3 font-mono text-xs bg-black/50 px-3 py-1 rounded-full border border-white/5 z-30 text-purple-300 font-bold shadow-md">
               SCORE: {score}
             </div>
 
-            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono">
+            {/* ゲーム中のルール早見表 (左側にスタイリッシュに配置) */}
+            <div className="absolute top-16 left-3 z-30 font-mono text-[9px] text-zinc-500 bg-zinc-950/60 backdrop-blur-sm p-2 rounded-lg border border-white/5 space-y-1 select-none pointer-events-none">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 border border-white/20" />
+                <span>通常ノーツ : <span className="text-zinc-300 font-bold">+10 pt</span></span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-[6px]">💚</span>
+                <span>回復ノーツ : <span className="text-emerald-400 font-bold">+10 HP</span></span>
+              </div>
+            </div>
+
+            {/* 画面中央のエフェクト文字 (PERFECTやLEVEL UP!) */}
+            <div className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-30 text-center font-mono w-full">
               {combo > 0 && <div className="text-xs text-purple-400 font-bold tracking-widest">{combo} COMBO</div>}
               {effect && (
-                <div className={`text-xl font-black ${
-                  effect.includes("HEAL") ? "text-emerald-400 scale-110" : effect.includes("PERFECT") ? "text-yellow-400" : "text-red-500 animate-shake"
+                <div className={`text-2xl font-black tracking-wider transition-all duration-100 uppercase ${
+                  effect.includes("LEVEL") ? "text-gradient bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-purple-400 to-cyan-300 scale-120 animate-bounce" :
+                  effect.includes("HEAL") ? "text-emerald-400 scale-110" : effect.includes("PERFECT") ? "text-yellow-400" : "text-red-500"
                 }`}>
                   {effect}
                 </div>
@@ -299,7 +317,7 @@ export default function GamePage() {
             </div>
 
             <div className="absolute bottom-20 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-zinc-800 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 grid grid-cols-2 pt-16"> {/* HPバー避けるため上部パディング追加 */}
+            <div className="absolute inset-0 grid grid-cols-2 pt-16"> 
               {lanes.map((lane) => (
                 <div key={lane} className="relative border-r border-zinc-900/40 last:border-none flex justify-center">
                   <div className="absolute bottom-14 w-14 h-14 rounded-full border-2 border-zinc-800 flex items-center justify-center bg-zinc-950/20">
@@ -333,7 +351,7 @@ export default function GamePage() {
             <div className="bg-zinc-950 p-4 rounded-xl border border-zinc-900 font-mono mb-6">
               <p className="text-zinc-500 text-xs">FINAL SCORE</p>
               <p className="text-3xl font-black text-yellow-400 mt-1">{score} <span className="text-xs text-zinc-400">pt</span></p>
-              <p className="text-zinc-500 text-[10px] mt-2">最高到達速度: x{speed.toFixed(1)} / MAX COMBO: {maxCombo}</p>
+              <p className="text-zinc-500 text-[10px] mt-2">最高到達レベル: LV {level} / MAX COMBO: {maxCombo}</p>
             </div>
             <button
               onClick={() => setGameOver(false)}
