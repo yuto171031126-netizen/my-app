@@ -22,7 +22,7 @@ export default function Home() {
             はもねぴあ 14期 卒業ライブ
           </h1>
           <div className="inline-block px-6 py-2 bg-zinc-900/50 backdrop-blur-md border border-white/10 rounded-full text-zinc-300 text-sm font-medium">
-            2027.03.20 | 中部講堂 × パンフレット連動特設サイト
+            2027.03.04~2027.03.07 |  パンフレット連動特設サイト
           </div>
         </header>
 
