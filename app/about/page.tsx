@@ -70,31 +70,41 @@ export default function MembersGallery() {
   );
 }
 
-// 2枚目の画像を再現したクリック可能なメンバーカード
+// 2枚目の画像を再現したクリック可能なメンバーカード（修正版）
 function MemberCard({ member }: { member: Member }) {
-  // 詳細ページへのURL (例: /about/inatomi)
+  // 詳細ページへのURL (例: /about/dommy)
   const detailUrl = `/about/${member.id}`;
 
   return (
     <a 
       href={detailUrl}
       className="p-6 bg-zinc-900 border border-white/10 rounded-2xl flex flex-col items-center justify-center text-center shadow-lg backdrop-blur-sm select-none
-        transition-premium hover:-translate-y-1 hover:border-purple-500 hover:bg-zinc-800/60 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]
+        transition-all duration-300 hover:-translate-y-1 hover:border-purple-500 hover:bg-zinc-800/60 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]
         active:scale-[0.98] active:border-purple-400 active:bg-purple-900/20 active:shadow-[0_0_20px_rgba(168,85,247,0.4)]
       "
-    
     >
-      {/* カード上部：2枚目の画像のアバター部分 (仮の👤アイコン) */}
+      {/* カード上部：アバター部分 */}
       <div className="w-16 h-16 rounded-full bg-zinc-800 mb-4 flex items-center justify-center text-3xl shadow-inner border border-zinc-700">👤</div>
 
-      {/* カード中央：あだ名（名前欄を削除してメインにする） */}
-      <h2 className="text-2xl font-black text-white group-hover:text-purple-300 transition-colors duration-150">
+      {/* カード中央：あだ名 */}
+      <h2 className="text-2xl font-black text-white hover:text-purple-300 transition-colors duration-150">
         {member.nickname}
-      </h2
-      >
+      </h2>
 
-      {/* カード下部：1枚目の画像の役職情報をスタイリッシュにタグ化して収める */}
+      {/* カード下部：役職情報をスタイリッシュにタグ化 */}
       <div className="mt-4 space-y-1.5 w-full flex flex-col items-center">
         {/* 14期運営時の役職 */}
         {member.roleGen !== "—" && (
-          <span className="inline-block px-2 py-0.5 rounded
+          <span className="inline-block px-2 py-0.5 rounded-md bg-zinc-800/60 border border-zinc-700/50 text-[10px] text-zinc-400 font-mono">
+            {member.roleGen}
+          </span>
+        )}
+        
+        {/* 卒ライ運営時の役職 */}
+        <span className="inline-block px-2.5 py-1 rounded-md bg-purple-950/40 border border-purple-500/20 text-xs text-purple-300 font-semibold shadow-sm">
+          {member.roleLive}
+        </span>
+      </div>
+    </a>
+  );
+}
