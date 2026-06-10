@@ -1,7 +1,7 @@
 import Link from 'next/link'; // 忘れずに追加してください！
 
 export default function GalleryPage() {
-  const grades = ["1年", "2年", "3年", "4年"];
+  const grades = ["1年生", "2年生", "3年生", "4年生"];
   return (
     <div className="p-6 md:p-12 max-w-3xl mx-auto">
       <h1 className="text-3xl font-black mb-8">卒業写真一覧</h1>

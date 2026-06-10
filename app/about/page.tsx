@@ -35,8 +35,8 @@ export default function AboutPage() {
           <h1 className="text-4xl md:text-5xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white via-zinc-200 to-purple-300">
             14期紹介
           </h1>
-          <p className="text-zinc-400 max-w-md mx-auto text-sm leading-relaxed">
-            はもねぴあ14期を形づくる17人のメンバー。それぞれの歌声と想いが、このステージで一つになります。
+          <p className="text-zinc-400 max-w-md mx-auto text-sm leading-relaxedtracking-wide">
+           はもねぴあ14期を形づくる17人のメンバー。出会いから今日までのすべてをメロディに変えて、17の個性が一つに溶け合う最後のステージを、あなたへ。
           </p>
         </header>
 
