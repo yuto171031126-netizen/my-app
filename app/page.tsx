@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { albumData } from './data';
 
 // メインカードの背景スライドショー
 const slideMedia = [
@@ -21,6 +22,8 @@ const petals = Array.from({ length: 15 }).map((_, i) => ({
 
 export default function Home() {
   const [currentIdx, setCurrentIdx] = useState(0);
+  // 学年フィルター用の状態（all, 1st, 2nd, 3rd, 4th）
+  const [selectedYear, setSelectedYear] = useState<string>('all');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -29,22 +32,21 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  // 選択中の学年に合わせてアルバムリストを絞り込む
+  const filteredAlbum = selectedYear === 'all' 
+    ? albumData 
+    : albumData.filter(item => item.year === selectedYear);
+
   return (
     <div className="min-h-screen bg-[#fcf8f2] text-[#4a3e3d] font-sans selection:bg-rose-200 relative overflow-hidden">
       
-      {/* 🌸 背景でゆらゆら舞い散る桜のアニメーション */}
+      {/* 🌸 背景でゆらゆら舞い散る桜 */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <style jsx>{`
           @keyframes fall {
-            0% {
-              transform: translateY(-10vh) rotate(0deg) translateX(0);
-            }
-            50% {
-              transform: translateY(55vh) rotate(180deg) translateX(25px);
-            }
-            100% {
-              transform: translateY(110vh) rotate(360deg) translateX(-15px);
-            }
+            0% { transform: translateY(-10vh) rotate(0deg) translateX(0); }
+            50% { transform: translateY(55vh) rotate(180deg) translateX(25px); }
+            100% { transform: translateY(110vh) rotate(360deg) translateX(-15px); }
           }
           .sakura-petal {
             position: absolute;
@@ -70,9 +72,9 @@ export default function Home() {
         ))}
       </div>
 
-      {/* コンテンツ本体（z-10で桜の上に配置） */}
+      {/* コンテンツ本体 */}
       <div className="relative z-10">
-        {/* 1. 画面最上部：やわらかい桜ピンクのバナー */}
+        {/* 1. 最上部バナー */}
         <div className="bg-gradient-to-r from-rose-100 via-pink-100 to-rose-100 text-rose-900 py-2.5 px-6 text-xs font-medium flex justify-between items-center border-b border-rose-200 shadow-xs">
           <span className="flex items-center gap-2">
             🌸 HAMONEPIA 14TH GRADUATION LIVE — THEME: <strong className="font-serif text-rose-800 text-sm">"DEAR"</strong>
@@ -110,7 +112,7 @@ export default function Home() {
           <div className="bg-[#5c4b4a] text-rose-100 text-xs">
             <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-1.5 gap-2">
               <a href="#top" className="bg-rose-400 text-white px-5 py-2 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
-              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">1. アルバム（桜の足跡）</a>
+              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">1. アルバム（1〜4年）</a>
               <a href="#movies" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">2. 企画で使う映像集</a>
               <a href="#pamphlet" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">3. デジタル版パンフ（DEAR）</a>
               <a href="#access" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">会場・アクセス</a>
@@ -121,9 +123,8 @@ export default function Home() {
         {/* メインコンテンツエリア */}
         <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
           
-          {/* ヒーロービジュアル */}
+          {/* ヒーロービジュアル（明るいレター風） */}
           <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[400px] flex items-center">
-            {/* 背景写真スライドショー */}
             {slideMedia.map((media, idx) => (
               <div
                 key={idx}
@@ -135,7 +136,6 @@ export default function Home() {
             ))}
             <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-rose-50/50" />
 
-            {/* コンテンツ */}
             <div className="relative z-10 max-w-2xl space-y-4">
               <div className="inline-flex items-center gap-2 bg-rose-100/70 border border-rose-200 px-3.5 py-1 rounded-full">
                 <span className="text-rose-800 text-xs font-serif tracking-wider">GRADUATION THEME</span>
@@ -161,51 +161,93 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 1. アルバムセクション */}
-          <section id="album" className="space-y-4">
-            <div className="flex justify-between items-end border-b border-rose-200 pb-3">
+          {/* 1. アルバムセクション（学年別フィルター機能付き） */}
+          <section id="album" className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-rose-200 pb-3 gap-4">
               <div>
                 <span className="text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
                   🌸 Gallery & Memories
                 </span>
-                <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">1. アルバム（思い出の足跡）</h3>
+                <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">1. アルバム（1〜4年のあゆみ）</h3>
               </div>
-              <span className="text-xs text-gray-500">合宿・練習・最高の笑顔</span>
+
+              {/* 学年切り替えタブ */}
+              <div className="flex flex-wrap gap-1.5 bg-rose-50/80 p-1 rounded-full border border-rose-200/80 text-xs">
+                <button
+                  onClick={() => setSelectedYear('all')}
+                  className={`px-4 py-1.5 rounded-full transition font-medium ${
+                    selectedYear === 'all' 
+                      ? 'bg-rose-500 text-white shadow-2xs' 
+                      : 'text-gray-600 hover:text-rose-600'
+                  }`}
+                >
+                  すべて
+                </button>
+                <button
+                  onClick={() => setSelectedYear('1st')}
+                  className={`px-4 py-1.5 rounded-full transition font-medium ${
+                    selectedYear === '1st' 
+                      ? 'bg-rose-500 text-white shadow-2xs' 
+                      : 'text-gray-600 hover:text-rose-600'
+                  }`}
+                >
+                  1年生
+                </button>
+                <button
+                  onClick={() => setSelectedYear('2nd')}
+                  className={`px-4 py-1.5 rounded-full transition font-medium ${
+                    selectedYear === '2nd' 
+                      ? 'bg-rose-500 text-white shadow-2xs' 
+                      : 'text-gray-600 hover:text-rose-600'
+                  }`}
+                >
+                  2年生
+                </button>
+                <button
+                  onClick={() => setSelectedYear('3rd')}
+                  className={`px-4 py-1.5 rounded-full transition font-medium ${
+                    selectedYear === '3rd' 
+                      ? 'bg-rose-500 text-white shadow-2xs' 
+                      : 'text-gray-600 hover:text-rose-600'
+                  }`}
+                >
+                  3年生
+                </button>
+                <button
+                  onClick={() => setSelectedYear('4th')}
+                  className={`px-4 py-1.5 rounded-full transition font-medium ${
+                    selectedYear === '4th' 
+                      ? 'bg-rose-500 text-white shadow-2xs' 
+                      : 'text-gray-600 hover:text-rose-600'
+                  }`}
+                >
+                  4年生
+                </button>
+              </div>
             </div>
 
+            {/* アルバムカードグリッド（選択した学年のみ自動表示） */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
-                <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
-                  [春合宿・小浜温泉のフォト]
+              {filteredAlbum.map((item) => (
+                <div key={item.id} className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
+                  <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
+                    {item.imageUrl ? (
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover rounded-xl" />
+                    ) : (
+                      <span>[{item.title}の写真]</span>
+                    )}
+                  </div>
+                  <div className="p-3.5 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">
+                        {item.yearLabel} ({item.date})
+                      </span>
+                    </div>
+                    <h4 className="font-serif font-bold text-base text-[#4a3e3d]">{item.title}</h4>
+                    <p className="text-xs text-gray-600 font-light leading-relaxed">{item.description}</p>
+                  </div>
                 </div>
-                <div className="p-3.5 space-y-1.5">
-                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">2025.03 春</span>
-                  <h4 className="font-serif font-bold text-base text-[#4a3e3d]">はもねぴあ春合宿イン小浜温泉</h4>
-                  <p className="text-xs text-gray-600 font-light leading-relaxed">夜通し語り合い、歌い明かしたかけがえのない時間。</p>
-                </div>
-              </div>
-
-              <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
-                <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
-                  [スタジオ練習の真剣な横顔]
-                </div>
-                <div className="p-3.5 space-y-1.5">
-                  <span className="text-[10px] bg-amber-50 text-amber-900 border border-amber-200 px-2.5 py-0.5 rounded-full font-medium">オフショット</span>
-                  <h4 className="font-serif font-bold text-base text-[#4a3e3d]">レコーディング＆深夜練習の裏側</h4>
-                  <p className="text-xs text-gray-600 font-light leading-relaxed">重ねてきたハーモニーと、その裏にあった笑い声。</p>
-                </div>
-              </div>
-
-              <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
-                <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
-                  [14期全員集合写真]
-                </div>
-                <div className="p-3.5 space-y-1.5">
-                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">卒業記念</span>
-                  <h4 className="font-serif font-bold text-base text-[#4a3e3d]">14期生 Memorial Photo</h4>
-                  <p className="text-xs text-gray-600 font-light leading-relaxed">支え合ってきた16人の絆が詰まった最高のアルバム。</p>
-                </div>
-              </div>
+              ))}
             </div>
           </section>
 
@@ -288,7 +330,7 @@ export default function Home() {
         {/* フッター */}
         <footer className="bg-[#4a3e3d] text-rose-100 text-xs py-12 mt-16 border-t border-rose-200/30">
           <div className="max-w-7xl mx-auto px-6 text-center space-y-3">
-            <p className="font-serif text-white tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DEAR」実行委員会</p>
+            <p className="font-serif text-[#fcf8f2] tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DEAR」実行委員会</p>
             <p className="font-light text-rose-200/90">おたけ, こっこ, しなぽん, とも, うっしー, まつきよ, ディアナ, あんこ, もんろー, りずり, むっきー, ユン, ゆめ, やっすん, ちぇりこ, えすて</p>
             <p className="text-rose-300/60 text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "DEAR". All Rights Reserved.</p>
           </div>
