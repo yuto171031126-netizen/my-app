@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { albumData } from './data';
+import { albumByYears, EventItem } from './data';
 
 // メインカードの背景スライドショー
 const slideMedia = [
@@ -22,8 +22,7 @@ const petals = Array.from({ length: 15 }).map((_, i) => ({
 
 export default function Home() {
   const [currentIdx, setCurrentIdx] = useState(0);
-  // 学年フィルター用の状態（all, 1st, 2nd, 3rd, 4th）
-  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [activeYearKey, setActiveYearKey] = useState<'1st' | '2nd' | '3rd' | '4th'>('1st');
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -32,10 +31,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // 選択中の学年に合わせてアルバムリストを絞り込む
-  const filteredAlbum = selectedYear === 'all' 
-    ? albumData 
-    : albumData.filter(item => item.year === selectedYear);
+  const currentYearData = albumByYears.find((y) => y.yearKey === activeYearKey) || albumByYears[0];
 
   return (
     <div className="min-h-screen bg-[#fcf8f2] text-[#4a3e3d] font-sans selection:bg-rose-200 relative overflow-hidden">
@@ -74,7 +70,7 @@ export default function Home() {
 
       {/* コンテンツ本体 */}
       <div className="relative z-10">
-        {/* 1. 最上部バナー */}
+        {/* 最上部バナー */}
         <div className="bg-gradient-to-r from-rose-100 via-pink-100 to-rose-100 text-rose-900 py-2.5 px-6 text-xs font-medium flex justify-between items-center border-b border-rose-200 shadow-xs">
           <span className="flex items-center gap-2">
             🌸 HAMONEPIA 14TH GRADUATION LIVE — THEME: <strong className="font-serif text-rose-800 text-sm">"DEAR"</strong>
@@ -82,7 +78,7 @@ export default function Home() {
           <span className="text-rose-700/80 text-[11px] hidden sm:inline">【はもねぴあ14期 卒業記念ポータル】</span>
         </div>
 
-        {/* 2. ヘッダー */}
+        {/* ヘッダー */}
         <header className="bg-white/90 backdrop-blur-md border-b border-rose-200/60 sticky top-0 z-50 shadow-xs">
           <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
             <div>
@@ -95,7 +91,6 @@ export default function Home() {
               <p className="text-xs text-gray-500 mt-1 font-serif">〜拝啓、4年間を共に駆け抜けた愛しい仲間たちへ〜</p>
             </div>
 
-            {/* 検索バー */}
             <div className="flex items-center gap-2">
               <input 
                 type="text" 
@@ -108,11 +103,10 @@ export default function Home() {
             </div>
           </div>
 
-          {/* タブナビゲーション */}
           <div className="bg-[#5c4b4a] text-rose-100 text-xs">
             <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-1.5 gap-2">
               <a href="#top" className="bg-rose-400 text-white px-5 py-2 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
-              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">1. アルバム（1〜4年）</a>
+              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">1. アルバム（学年別）</a>
               <a href="#movies" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">2. 企画で使う映像集</a>
               <a href="#pamphlet" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">3. デジタル版パンフ（DEAR）</a>
               <a href="#access" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">会場・アクセス</a>
@@ -123,8 +117,8 @@ export default function Home() {
         {/* メインコンテンツエリア */}
         <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
           
-          {/* ヒーロービジュアル（明るいレター風） */}
-          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[400px] flex items-center">
+          {/* ヒーロービジュアル */}
+          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[360px] flex items-center">
             {slideMedia.map((media, idx) => (
               <div
                 key={idx}
@@ -161,93 +155,78 @@ export default function Home() {
             </div>
           </div>
 
-          {/* 1. アルバムセクション（学年別フィルター機能付き） */}
+          {/* 1. アルバムセクション（学年を選択 → イベント項目を展開） */}
           <section id="album" className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-rose-200 pb-3 gap-4">
-              <div>
-                <span className="text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
-                  🌸 Gallery & Memories
-                </span>
-                <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">1. アルバム（1〜4年のあゆみ）</h3>
-              </div>
-
-              {/* 学年切り替えタブ */}
-              <div className="flex flex-wrap gap-1.5 bg-rose-50/80 p-1 rounded-full border border-rose-200/80 text-xs">
-                <button
-                  onClick={() => setSelectedYear('all')}
-                  className={`px-4 py-1.5 rounded-full transition font-medium ${
-                    selectedYear === 'all' 
-                      ? 'bg-rose-500 text-white shadow-2xs' 
-                      : 'text-gray-600 hover:text-rose-600'
-                  }`}
-                >
-                  すべて
-                </button>
-                <button
-                  onClick={() => setSelectedYear('1st')}
-                  className={`px-4 py-1.5 rounded-full transition font-medium ${
-                    selectedYear === '1st' 
-                      ? 'bg-rose-500 text-white shadow-2xs' 
-                      : 'text-gray-600 hover:text-rose-600'
-                  }`}
-                >
-                  1年生
-                </button>
-                <button
-                  onClick={() => setSelectedYear('2nd')}
-                  className={`px-4 py-1.5 rounded-full transition font-medium ${
-                    selectedYear === '2nd' 
-                      ? 'bg-rose-500 text-white shadow-2xs' 
-                      : 'text-gray-600 hover:text-rose-600'
-                  }`}
-                >
-                  2年生
-                </button>
-                <button
-                  onClick={() => setSelectedYear('3rd')}
-                  className={`px-4 py-1.5 rounded-full transition font-medium ${
-                    selectedYear === '3rd' 
-                      ? 'bg-rose-500 text-white shadow-2xs' 
-                      : 'text-gray-600 hover:text-rose-600'
-                  }`}
-                >
-                  3年生
-                </button>
-                <button
-                  onClick={() => setSelectedYear('4th')}
-                  className={`px-4 py-1.5 rounded-full transition font-medium ${
-                    selectedYear === '4th' 
-                      ? 'bg-rose-500 text-white shadow-2xs' 
-                      : 'text-gray-600 hover:text-rose-600'
-                  }`}
-                >
-                  4年生
-                </button>
-              </div>
+            <div className="border-b border-rose-200 pb-3">
+              <span className="text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
+                🌸 Gallery & Memories
+              </span>
+              <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">1. アルバム（学年・イベント別）</h3>
+              <p className="text-xs text-gray-500 mt-1">見たい学年を選ぶと、その年の合宿やライブなどのイベント項目が表示されます。</p>
             </div>
 
-            {/* アルバムカードグリッド（選択した学年のみ自動表示） */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {filteredAlbum.map((item) => (
-                <div key={item.id} className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
-                  <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover rounded-xl" />
-                    ) : (
-                      <span>[{item.title}の写真]</span>
-                    )}
-                  </div>
-                  <div className="p-3.5 space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">
-                        {item.yearLabel} ({item.date})
+            {/* Step 1: 1〜4年生の学年選択カード */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {albumByYears.map((group) => {
+                const isSelected = group.yearKey === activeYearKey;
+                return (
+                  <button
+                    key={group.yearKey}
+                    onClick={() => setActiveYearKey(group.yearKey)}
+                    className={`p-5 rounded-2xl border text-left transition relative overflow-hidden ${
+                      isSelected
+                        ? 'bg-rose-500 text-white border-rose-500 shadow-md transform scale-[1.02]'
+                        : 'bg-white text-[#4a3e3d] border-rose-200/80 hover:border-rose-400 hover:bg-rose-50/50 shadow-2xs'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-lg font-serif font-bold ${isSelected ? 'text-white' : 'text-rose-700'}`}>
+                        {group.yearLabel}
+                      </span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-800'}`}>
+                        {group.events.length} イベント
                       </span>
                     </div>
-                    <h4 className="font-serif font-bold text-base text-[#4a3e3d]">{item.title}</h4>
-                    <p className="text-xs text-gray-600 font-light leading-relaxed">{item.description}</p>
+                    <p className={`text-xs font-light line-clamp-1 ${isSelected ? 'text-rose-100' : 'text-gray-500'}`}>
+                      {group.catchphrase}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Step 2: 選択した学年のイベント（項目）一覧表示エリア */}
+            <div className="bg-white/80 backdrop-blur-xs border border-rose-200/80 rounded-3xl p-6 md:p-8 space-y-4 shadow-sm">
+              <div className="flex justify-between items-center border-b border-rose-100 pb-3">
+                <h4 className="font-serif font-bold text-lg text-[#4a3e3d] flex items-center gap-2">
+                  <span>✨</span> {currentYearData.yearLabel}の思い出イベント一覧
+                </h4>
+                <span className="text-xs text-rose-600 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+                  {currentYearData.catchphrase}
+                </span>
+              </div>
+
+              {/* イベントカードグリッド */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+                {currentYearData.events.map((event: EventItem) => (
+                  <div key={event.id} className="bg-[#fffdf9] border border-rose-100 rounded-2xl p-4 shadow-2xs hover:shadow-md transition space-y-3">
+                    <div className="h-44 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/60 overflow-hidden">
+                      {event.imageUrl ? (
+                        <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>[{event.title}の写真]</span>
+                      )}
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-medium">
+                        {event.date}
+                      </span>
+                      <h5 className="font-serif font-bold text-base text-[#4a3e3d]">{event.title}</h5>
+                      <p className="text-xs text-gray-600 font-light leading-relaxed">{event.description}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </section>
 
