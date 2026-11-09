@@ -29,7 +29,7 @@ export default function Home() {
         <span className="text-rose-700/80 text-[11px] hidden sm:inline">【はもねぴあ14期 卒業記念ポータル】</span>
       </div>
 
-      {/* 2. ヘッダー：手紙（レター）モチーフの温かみのあるデザイン */}
+      {/* 2. ヘッダー */}
       <header className="bg-white/90 backdrop-blur-md border-b border-rose-200/60 sticky top-0 z-50 shadow-xs">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
           <div>
@@ -55,7 +55,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* タブナビゲーション：丸みのあるレター風ボタン */}
+        {/* タブナビゲーション */}
         <div className="bg-[#5c4b4a] text-rose-100 text-xs">
           <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-1.5 gap-2">
             <a href="#top" className="bg-rose-400 text-white px-5 py-2 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
@@ -70,48 +70,48 @@ export default function Home() {
       {/* メインコンテンツエリア */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
         
-        {/* ヒーロービジュアル：手紙×スライドショー（温かいクラフト＆桜トーン） */}
-        <div className="bg-[#4a3e3d] text-white rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-lg border border-rose-200/30 min-h-[400px] flex items-center">
-          {/* 背景写真スライドショー */}
+        {/* ヒーロービジュアル：黒をなくし、明るい生成り色（手紙・便箋風）＆スライドショー背景に変更 */}
+        <div className="bg-[#fffdf9] rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[400px] flex items-center">
+          {/* 背景写真スライドショー（薄めに表示） */}
           {slideMedia.map((media, idx) => (
             <div
               key={idx}
               className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
-                idx === currentIdx ? 'opacity-40' : 'opacity-0'
+                idx === currentIdx ? 'opacity-20' : 'opacity-0'
               }`}
               style={{ backgroundImage: `url(${media.url})` }}
             />
           ))}
-          {/* 温かなブラウン＆桜ピンクのオーバーレイ */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#382d2c] via-[#382d2c]/80 to-rose-950/20" />
+          {/* 温かなペーパー感のグラデーション */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-rose-50/50" />
 
           {/* コンテンツ */}
           <div className="relative z-10 max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-xs border border-rose-200/40 px-3.5 py-1 rounded-full">
-              <span className="text-rose-200 text-xs font-serif tracking-wider">GRADUATION THEME</span>
-              <span className="text-amber-200 text-xs font-bold font-serif">" DEAR "</span>
+            <div className="inline-flex items-center gap-2 bg-rose-100/70 border border-rose-200 px-3.5 py-1 rounded-full">
+              <span className="text-rose-800 text-xs font-serif tracking-wider">GRADUATION THEME</span>
+              <span className="text-rose-900 text-xs font-bold font-serif">" DEAR "</span>
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-wide leading-relaxed text-rose-50">
+            <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-wide leading-relaxed text-[#4a3e3d]">
               舞い散る桜の下で紡ぐ、<br />
               一通の特別な手紙（DEAR）。
             </h2>
-            <p className="text-rose-100/90 text-xs md:text-sm font-light leading-relaxed">
+            <p className="text-gray-600 text-xs md:text-sm font-light leading-relaxed">
               おたけ、こっこ、しなぽん、とも、そして大切な14期の仲間たちへ。4年間の感謝と愛を込めて、思い出のアルバム・秘蔵映像・デジタルパンフレットをここへ届けます。
             </p>
 
             <div className="pt-2 flex gap-3">
-              <a href="#pamphlet" className="bg-rose-400 text-white font-medium px-6 py-3 rounded-full text-xs tracking-wider hover:bg-rose-500 transition shadow-md flex items-center gap-1.5">
+              <a href="#pamphlet" className="bg-rose-500 text-white font-medium px-6 py-3 rounded-full text-xs tracking-wider hover:bg-rose-600 transition shadow-sm flex items-center gap-1.5">
                 ✉️ デジタルパンフ（手紙）を読む
               </a>
-              <a href="#movies" className="border border-white/40 hover:bg-white/10 px-6 py-3 rounded-full text-xs tracking-wider transition">
+              <a href="#movies" className="border border-rose-300 text-gray-700 hover:bg-rose-50 px-6 py-3 rounded-full text-xs tracking-wider transition">
                 映像集を見る ▶
               </a>
             </div>
           </div>
         </div>
 
-        {/* 1. アルバムセクション（ポラロイド・アルバム風） */}
+        {/* 1. アルバムセクション */}
         <section id="album" className="space-y-4">
           <div className="flex justify-between items-end border-b border-rose-200 pb-3">
             <div>
@@ -124,7 +124,6 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* ポラロイド風カード 1 */}
             <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
                 [春合宿・小浜温泉のフォト]
@@ -136,7 +135,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ポラロイド風カード 2 */}
             <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
                 [スタジオ練習の真剣な横顔]
@@ -148,7 +146,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ポラロイド風カード 3 */}
             <div className="bg-white border border-rose-100 rounded-2xl p-3.5 shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f5ede4] rounded-xl flex items-center justify-center text-gray-500 text-xs font-medium border border-rose-100/50">
                 [14期全員集合写真]
@@ -181,7 +178,7 @@ export default function Home() {
                 <h4 className="font-serif font-bold text-lg text-[#4a3e3d] mt-2">14期生 秘蔵サプリンクス映像</h4>
                 <p className="text-xs text-gray-600 mt-1.5 font-light leading-relaxed">動画編集チームが愛を込めて制作した、あの日の爆笑＆エモい未公開映像集。</p>
               </div>
-              <button className="bg-[#5c4b4a] hover:bg-[#4a3e3d] text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
+              <button className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
                 映像を再生する ▶
               </button>
             </div>
@@ -192,14 +189,14 @@ export default function Home() {
                 <h4 className="font-serif font-bold text-lg text-[#4a3e3d] mt-2">「DEAR - THE 14th HARMONY」OPムービー</h4>
                 <p className="text-xs text-gray-600 mt-1.5 font-light leading-relaxed">ステージの開幕を告げる、手紙と桜が織りなす感動のオープニング。</p>
               </div>
-              <button className="bg-[#5c4b4a] hover:bg-[#4a3e3d] text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
+              <button className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
                 映像を再生する ▶
               </button>
             </div>
           </div>
         </section>
 
-        {/* 3. デジタル版パンフセクション（封筒・手紙モチーフ） */}
+        {/* 3. デジタル版パンフセクション */}
         <section id="pamphlet" className="space-y-4">
           <div className="flex justify-between items-end border-b border-rose-200 pb-3">
             <div>
@@ -212,12 +209,10 @@ export default function Home() {
           </div>
 
           <div className="bg-gradient-to-br from-white via-rose-50/20 to-orange-50/20 border border-rose-200/80 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row items-center gap-6">
-            {/* 封筒風の表紙プレースホルダー */}
             <div className="w-full md:w-1/3 bg-[#f7eee3] h-64 rounded-2xl flex flex-col items-center justify-center text-gray-600 text-xs font-serif border-2 border-dashed border-rose-200/80 shadow-inner p-4 text-center space-y-2 relative overflow-hidden">
               <span className="text-3xl">✉️</span>
               <span className="font-bold text-base text-[#4a3e3d]">DEAR</span>
               <span className="text-[11px] text-gray-500">はもねぴあ14期 卒業記念パンフレット</span>
-              <span className="absolute bottom-2 text-[10px] text-rose-400 font-sans">※クリックでめくれます</span>
             </div>
 
             <div className="w-full md:w-2/3 space-y-3">
@@ -227,7 +222,7 @@ export default function Home() {
                 全出演バンドのセットリスト、手紙（DEAR）として綴られたメンバー一人ひとりからのメッセージ、4年間の思い出を収録。上質な封筒を開くようなワクワク感をお楽しみください。
               </p>
               <div className="pt-3 flex flex-wrap gap-3">
-                <button className="bg-rose-400 hover:bg-rose-500 text-white px-6 py-3 rounded-full text-xs font-medium transition shadow-sm flex items-center gap-1.5">
+                <button className="bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-full text-xs font-medium transition shadow-sm flex items-center gap-1.5">
                   ✉️ デジタルパンフ（手紙）を開く
                 </button>
                 <button className="border border-gray-300 hover:border-gray-500 text-gray-700 px-5 py-3 rounded-full text-xs font-medium transition">
@@ -244,7 +239,7 @@ export default function Home() {
       <footer className="bg-[#4a3e3d] text-rose-100 text-xs py-12 mt-16 border-t border-rose-200/30">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-3">
           <p className="font-serif text-white tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DEAR」実行委員会</p>
-          <p className="font-light text-rose-200/90">おたけ、こっこ、しなぽん、とも、うっしー、まつきよ、ディアナ、あんこ、もんろー、りずり、むっきー、ユン、ゆめ、やっすん、ちぇりこ、えすて</p>
+          <p className="font-light text-rose-200/90">おたけ, こっこ, しなぽん, とも, うっしー, まつきよ, ディアナ, あんこ, もんろー, りずり, むっきー, ユン, ゆめ, やっすん, ちぇりこ, えすて</p>
           <p className="text-rose-300/60 text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "DEAR". All Rights Reserved.</p>
         </div>
       </footer>
