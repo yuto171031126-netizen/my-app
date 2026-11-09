@@ -1,15 +1,34 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+
+// 背景に流したい写真や動画のリスト（ここに実際の画像URLを入れていくとランダム/順番に切り替わります）
+const slideMedia = [
+  { type: 'image', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1200&q=80', caption: '合宿のひとコマ' },
+  { type: 'image', url: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80', caption: 'ステージの熱気' },
+  { type: 'image', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80', caption: 'みんなの笑顔' },
+];
 
 export default function Home() {
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  // 4秒ごとにスライドを自動で切り替えるエフェクト
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % slideMedia.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#faf7f2] text-[#3a3532] font-sans">
-      {/* 1. 最上部アテンションバナー：少し柔らかいトーンに */}
+      {/* 1. 最上部アテンションバナー */}
       <div className="bg-[#2a2624] text-[#e6c567] py-2 px-6 text-xs tracking-wider flex justify-between items-center shadow-xs">
         <span>🌸 HAMONEPIA 14TH — SPECIAL GRADUATION PORTAL</span>
         <span className="text-gray-300">【はもねぴあ14期 卒業ライブ特設サイト】</span>
       </div>
 
-      {/* 2. ヘッダー：上品かつ親しみやすいデザイン */}
+      {/* 2. ヘッダー */}
       <header className="bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50 shadow-xs">
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
           <div>
@@ -19,7 +38,7 @@ export default function Home() {
             <p className="text-xs text-gray-500 font-sans mt-0.5">〜おたけ、こっこ、しなぽん、とも、そして最高の仲間たちと迎える最後の日〜</p>
           </div>
 
-          {/* 検索 */}
+          {/* 検索バー（※今はまだダミーです。必要に応じて機能を繋ぎ込めます） */}
           <div className="flex items-center gap-2">
             <input 
               type="text" 
@@ -32,7 +51,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* タブナビゲーション：丸みを持たせて柔らかく */}
+        {/* タブナビゲーション */}
         <div className="bg-[#2a2624] text-gray-300 text-xs">
           <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-1 gap-1">
             <a href="#top" className="bg-[#d4af37] text-black px-5 py-2 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
@@ -47,15 +66,31 @@ export default function Home() {
       {/* メインコンテンツエリア */}
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
         
-        {/* ヒーロービジュアル：角を丸くして柔らかい印象に */}
-        <div className="bg-gradient-to-br from-[#2a2624] to-[#3a3532] text-white rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-xl border border-[#d4af37]/30">
+        {/* 黒い部分：背景に写真/映像がスライドショーで流れるヒーロービジュアル */}
+        <div className="bg-[#2a2624] text-white rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-xl border border-[#d4af37]/30 min-h-[380px] flex items-center">
+          {/* 背景スライドショー画像 */}
+          {slideMedia.map((media, idx) => (
+            <div
+              key={idx}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                idx === currentIdx ? 'opacity-40' : 'opacity-0'
+              }`}
+              style={{ backgroundImage: `url(${media.url})` }}
+            />
+          ))}
+          {/* 黒のグラデーションオーバーレイ（文字を読みやすくするため） */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1a1818] via-[#1a1818]/80 to-transparent" />
+
+          {/* テキストコンテンツ */}
           <div className="relative z-10 max-w-2xl space-y-4">
-            <span className="text-[#e6c567] text-xs font-sans tracking-widest uppercase bg-white/10 px-3 py-1 rounded-full">Memory & Harmony</span>
+            <span className="text-[#e6c567] text-xs font-sans tracking-widest uppercase bg-white/10 px-3 py-1 rounded-full">
+              Memory & Harmony
+            </span>
             <h2 className="text-3xl md:text-4xl font-serif font-normal tracking-wide leading-relaxed">
               最高の仲間と創り上げた、<br />笑いと感動の記録。
             </h2>
             <p className="text-gray-300 text-xs md:text-sm font-light leading-relaxed">
-              高級感のある落ち着いた雰囲気を残しつつ、みんなとの温かい思い出がたっぷり詰まった14期専用ポータルです。アルバム、映像、デジタルパンフをごゆるりとお楽しみください。
+              高級感のある落ち着いた雰囲気を残しつつ、みんなとの温かい思い出がたっぷり詰まった14期専用ポータル。アルバム、映像、デジタルパンフをごゆるりとお楽しみください。
             </p>
             <div className="pt-2 flex gap-3">
               <a href="#pamphlet" className="bg-[#d4af37] text-black font-medium px-6 py-3 rounded-full text-xs tracking-wider hover:bg-[#e6c567] transition shadow-md">
@@ -79,7 +114,6 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* アルバムカード1 */}
             <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f2ece1] flex items-center justify-center text-gray-500 text-xs font-medium">
                 [合宿の満面の笑みフォト]
@@ -91,7 +125,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* アルバムカード2 */}
             <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f2ece1] flex items-center justify-center text-gray-500 text-xs font-medium">
                 [深夜練習の真剣な横顔]
@@ -103,7 +136,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* アルバムカード3 */}
             <div className="bg-white border border-gray-200/80 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition">
               <div className="h-48 bg-[#f2ece1] flex items-center justify-center text-gray-500 text-xs font-medium">
                 [14期全員集合写真]
@@ -186,7 +218,7 @@ export default function Home() {
 
       </main>
 
-      {/* フッター：温かみのある締めくくり */}
+      {/* フッター */}
       <footer className="bg-[#2a2624] text-gray-400 text-xs py-12 mt-16 border-t border-[#d4af37]/30">
         <div className="max-w-7xl mx-auto px-6 text-center space-y-3">
           <p className="font-serif text-white tracking-widest text-sm">はもねぴあ14期 卒業ライブ実行委員会</p>
