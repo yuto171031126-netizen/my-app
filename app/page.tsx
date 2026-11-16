@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { albumByYears, EventItem } from './data';
+import { albumByYears, YearGroup, EventItem } from './data';
+import { createClient } from '@/lib/supabase/client'; // さきほど作ったSupabaseクライアント
 
 // メインカードの背景スライドショー
 const slideMedia = [
@@ -24,6 +25,11 @@ export default function Home() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [activeYearKey, setActiveYearKey] = useState<'1st' | '2nd' | '3rd' | '4th'>('1st');
 
+  // Supabaseから取得したアルバムデータを格納するステート（初期値は data.ts のデータ）
+  const [albumData, setAlbumData] = useState<YearGroup[]>(albumByYears);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // 背景スライドショーのタイマー
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % slideMedia.length);
@@ -31,7 +37,40 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const currentYearData = albumByYears.find((y) => y.yearKey === activeYearKey) || albumByYears[0];
+  // 🌸 Supabaseからデータを取得する処理
+  useEffect(() => {
+    async function fetchSupabaseData() {
+      setIsLoading(true);
+      try {
+        const supabase = createClient();
+        
+        // 例: 'events' というテーブルから全データを取得する場合
+        const { data, error } = await supabase.from('events').select('*');
+
+        if (error) {
+          console.log('Supabaseからのデータ取得はまだスキップします（data.tsを使用中）:', error.message);
+          return;
+        }
+
+        // Supabaseにデータが存在する場合の整形処理（必要に応じてテーブル構造に合わせて調整できます）
+        if (data && data.length > 0) {
+          // ここでDBのデータを学年別（1st, 2nd...）にグループ化するなどの処理を書けます
+          // 修正後
+console.log('Supabaseからデータを取得しました:', data);
+
+        }
+      } catch (err) {
+        console.error('通信エラー:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchSupabaseData();
+  }, []);
+
+  // 現在選択されている学年のデータを取得
+  const currentYearData = albumData.find((y) => y.yearKey === activeYearKey) || albumData[0];
 
   return (
     <div className="min-h-screen bg-[#fcf8f2] text-[#4a3e3d] font-sans selection:bg-rose-200 relative overflow-hidden">
@@ -106,7 +145,7 @@ export default function Home() {
           <div className="bg-[#5c4b4a] text-rose-100 text-xs">
             <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-1.5 gap-2">
               <a href="#top" className="bg-rose-400 text-white px-5 py-2 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
-              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">1. アルバム（学年別）</a>
+              <a href="#album" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">アルバム（学年別）</a>
               <a href="#movies" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">2. 企画で使う映像集</a>
               <a href="#pamphlet" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">3. デジタル版パンフ（DEAR）</a>
               <a href="#access" className="px-5 py-2 rounded-full hover:bg-white/10 whitespace-nowrap transition">会場・アクセス</a>
@@ -141,7 +180,7 @@ export default function Home() {
                 一通の特別な手紙（DEAR）。
               </h2>
               <p className="text-gray-600 text-xs md:text-sm font-light leading-relaxed">
-                おたけ、こっこ、しなぽん、とも、そして大切な14期の仲間たちへ。4年間の感謝と愛を込めて、思い出のアルバム・秘蔵映像・デジタルパンフレットをここへ届けます。
+                おたけ, こっこ, しなぽん, とも, そして大切な14期の仲間たちへ。4年間の感謝と愛を込めて、思い出のアルバム・秘蔵映像・デジタルパンフレットをここへ届けます。
               </p>
 
               <div className="pt-2 flex gap-3">
@@ -161,13 +200,13 @@ export default function Home() {
               <span className="text-rose-500 text-xs font-bold tracking-widest uppercase flex items-center gap-1">
                 🌸 Gallery & Memories
               </span>
-              <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">1. アルバム（学年・イベント別）</h3>
+              <h3 className="text-xl font-serif font-bold text-[#4a3e3d]">アルバム（学年・イベント別）</h3>
               <p className="text-xs text-gray-500 mt-1">見たい学年を選ぶと、その年の合宿やライブなどのイベント項目が表示されます。</p>
             </div>
 
             {/* Step 1: 1〜4年生の学年選択カード */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {albumByYears.map((group) => {
+              {albumData.map((group) => {
                 const isSelected = group.yearKey === activeYearKey;
                 return (
                   <button
