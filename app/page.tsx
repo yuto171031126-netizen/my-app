@@ -18,15 +18,38 @@ const petals = Array.from({ length: 12 }).map((_, i) => ({
   opacity: 0.4 + Math.random() * 0.4,
 }));
 
-// 🌟 卒ライ終了日時（2027年3月14日 20:00:00 に設定。時間は自由に変えられます！）
+// 🌟 卒ライ終了日時（2027年3月14日 20:00:00 に設定）
 const TARGET_DATE = new Date('2027-03-14T20:00:00+09:00');
+
+// 🌟 カチャッと動くパタパタ時計風（フリップ）数字パーツ
+function FlipDigit({ value, label, isAccent = false }: { value: string; label: string; isAccent?: boolean }) {
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative bg-[#3b302f] text-[#fcf8f2] rounded-xl px-2.5 py-2 sm:px-3.5 sm:py-2.5 shadow-md border border-[#5c4b4a] overflow-hidden min-w-[46px] sm:min-w-[58px] flex justify-center items-center">
+        {/* パタパタ時計の中央の切れ目ライン */}
+        <div className="absolute inset-x-0 top-1/2 h-[1px] bg-black/40 z-20" />
+        <div className="absolute inset-x-0 top-[calc(50%+1px)] h-[1px] bg-white/10 z-20" />
+        
+        {/* 数字が変わるたびに key={value} でアニメーションが再発動して「カチャッ」と動く */}
+        <span
+          key={value}
+          className={`font-mono text-xl sm:text-3xl font-bold tracking-wider inline-block animate-flipTick ${
+            isAccent ? 'text-rose-300' : 'text-[#fcf8f2]'
+          }`}
+        >
+          {value}
+        </span>
+      </div>
+      <span className="text-[10px] sm:text-xs font-medium text-[#5c4b4a] mt-1.5">{label}</span>
+    </div>
+  );
+}
 
 export default function Home() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [activeYearKey, setActiveYearKey] = useState<'1st' | '2nd' | '3rd' | '4th'>('1st');
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
-  // 🌟 カウントダウン＆経過時間を管理するステート
   const [timeStatus, setTimeStatus] = useState<{
     isFinished: boolean;
     years: number;
@@ -36,7 +59,6 @@ export default function Home() {
     seconds: number;
   } | null>(null);
 
-  // スライドショーの自動切り替え
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % slideMedia.length);
@@ -44,21 +66,18 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  // 🌟 1秒ごとに現在時刻を計算するタイマー処理
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date();
       const diff = TARGET_DATE.getTime() - now.getTime();
 
       if (diff > 0) {
-        // 卒ライ終了前（残り時間）
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((diff / 1000 / 60) % 60);
         const seconds = Math.floor((diff / 1000) % 60);
         setTimeStatus({ isFinished: false, years: 0, days, hours, minutes, seconds });
       } else {
-        // 卒ライ終了後（経過時間）
         const elapsed = Math.abs(diff);
         const totalDays = Math.floor(elapsed / (1000 * 60 * 60 * 24));
         const years = Math.floor(totalDays / 365);
@@ -70,7 +89,7 @@ export default function Home() {
       }
     };
 
-    updateTimer(); // 初回即時実行
+    updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -89,22 +108,41 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#fcf8f2] text-[#4a3e3d] font-sans selection:bg-rose-200 relative overflow-hidden">
       
-      {/* 🌸 背景の桜 */}
+      {/* 🌸 背景の桜 & フリップアニメーション定義 */}
+      <style jsx global>{`
+        @keyframes fall {
+          0% { transform: translateY(-10vh) rotate(0deg) translateX(0); }
+          50% { transform: translateY(55vh) rotate(180deg) translateX(25px); }
+          100% { transform: translateY(110vh) rotate(360deg) translateX(-15px); }
+        }
+        .sakura-petal {
+          position: absolute;
+          top: -5%;
+          background: linear-gradient(135deg, #ffb7c5, #ffe4e8);
+          border-radius: 15px 0 15px 0;
+          animation: fall linear infinite;
+        }
+        /* カチャッと上から落ちてバウンドするパタパタ時計風アニメーション */
+        @keyframes flipTick {
+          0% {
+            transform: perspective(300px) rotateX(-75deg) translateY(-6px);
+            opacity: 0.3;
+          }
+          60% {
+            transform: perspective(300px) rotateX(12deg) translateY(1px);
+            opacity: 1;
+          }
+          100% {
+            transform: perspective(300px) rotateX(0deg) translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-flipTick {
+          animation: flipTick 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+      `}</style>
+
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <style jsx>{`
-          @keyframes fall {
-            0% { transform: translateY(-10vh) rotate(0deg) translateX(0); }
-            50% { transform: translateY(55vh) rotate(180deg) translateX(25px); }
-            100% { transform: translateY(110vh) rotate(360deg) translateX(-15px); }
-          }
-          .sakura-petal {
-            position: absolute;
-            top: -5%;
-            background: linear-gradient(135deg, #ffb7c5, #ffe4e8);
-            border-radius: 15px 0 15px 0;
-            animation: fall linear infinite;
-          }
-        `}</style>
         {petals.map((petal) => (
           <div
             key={petal.id}
@@ -125,7 +163,7 @@ export default function Home() {
         {/* 最上部バナー */}
         <div className="bg-gradient-to-r from-rose-100 via-pink-100 to-rose-100 text-rose-900 py-2 px-4 sm:px-6 text-[11px] sm:text-xs font-medium flex justify-between items-center border-b border-rose-200">
           <span className="truncate">
-            🌸 HAMONEPIA 14TH — THEME: <strong className="font-serif text-rose-800">"DEAR"</strong>
+            🌸 HAMONEPIA 14TH — THEME: <strong className="font-serif text-rose-800">"DE4r"</strong>
           </span>
           <span className="hidden sm:inline text-rose-700/80">【はもねぴあ14期 卒業記念ポータル】</span>
         </div>
@@ -135,7 +173,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d] flex items-center gap-2">
-                <span>✉️</span> DEAR. 
+                <span>✉️</span> DE4r. 
                 <span className="text-[10px] sm:text-xs font-sans font-normal bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full">
                   14期 卒ライ特設
                 </span>
@@ -168,7 +206,7 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-10 sm:space-y-12">
           
           {/* ヒーロービジュアル */}
-          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[340px] flex items-center">
+          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[360px] flex items-center">
             {slideMedia.map((media, idx) => (
               <div
                 key={idx}
@@ -180,54 +218,49 @@ export default function Home() {
             ))}
             <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-rose-50/50" />
 
-            <div className="relative z-10 w-full max-w-2xl space-y-4">
+            <div className="relative z-10 w-full max-w-2xl space-y-5">
               <div className="inline-flex items-center gap-2 bg-rose-100/70 border border-rose-200 px-3 py-0.5 rounded-full text-[11px] sm:text-xs">
-                <span className="text-rose-800 font-serif">GRADUATION THEME</span>
-                <span className="text-rose-900 font-bold font-serif">" DEAR "</span>
+                <span className="text-rose-800 font-serif">14TH GRADUATION THEME</span>
+                <span className="text-rose-900 font-bold font-serif">" DE4r "</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-normal tracking-wide leading-snug sm:leading-relaxed text-[#4a3e3d]">
                 舞い散る桜の下で紡ぐ、<br />
-                一通の特別な手紙（DEAR）。
+                一通の特別な手紙（DE4r）。
               </h2>
 
-              {/* 🌟 カウントダウン＆経過タイマーボックス */}
+              {/* 🌟 カチャッと動くパタパタ時計風タイマーボックス */}
               {timeStatus && (
-                <div className="bg-white/90 border border-rose-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs inline-block max-w-full">
+                <div className="bg-white/85 backdrop-blur-xs border border-rose-200/90 rounded-2xl p-4 sm:p-5 shadow-sm inline-block max-w-full">
                   {!timeStatus.isFinished ? (
-                    <div className="space-y-1">
-                      <p className="text-[11px] sm:text-xs font-bold text-rose-600 flex items-center gap-1.5">
-                        <span>⏳</span> 2027.03.14 卒業ライブ終了まであと
+                    <div className="space-y-2.5">
+                      <p className="text-[11px] sm:text-xs font-bold text-rose-600 tracking-wider flex items-center gap-1.5">
+                        <span className="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                        2027.03.14 卒業ライブ終了まであと
                       </p>
-                      <div className="flex items-baseline gap-1.5 sm:gap-2 font-serif text-[#4a3e3d]">
-                        <span className="text-2xl sm:text-3xl font-bold text-rose-600">{timeStatus.days}</span>
-                        <span className="text-xs sm:text-sm">日</span>
-                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.hours).padStart(2, '0')}</span>
-                        <span className="text-xs sm:text-sm">時間</span>
-                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.minutes).padStart(2, '0')}</span>
-                        <span className="text-xs sm:text-sm">分</span>
-                        <span className="text-base sm:text-lg font-bold text-rose-400">{String(timeStatus.seconds).padStart(2, '0')}</span>
-                        <span className="text-[11px] sm:text-xs text-gray-500">秒</span>
+                      <div className="flex items-start gap-2 sm:gap-3">
+                        <FlipDigit value={String(timeStatus.days)} label="DAYS" isAccent />
+                        <span className="text-xl sm:text-2xl font-bold text-rose-300 mt-2">:</span>
+                        <FlipDigit value={String(timeStatus.hours).padStart(2, '0')} label="HOURS" />
+                        <span className="text-xl sm:text-2xl font-bold text-rose-300 mt-2">:</span>
+                        <FlipDigit value={String(timeStatus.minutes).padStart(2, '0')} label="MINS" />
+                        <span className="text-xl sm:text-2xl font-bold text-rose-300 mt-2">:</span>
+                        <FlipDigit value={String(timeStatus.seconds).padStart(2, '0')} label="SECS" isAccent />
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <p className="text-[11px] sm:text-xs font-bold text-rose-700 flex items-center gap-1.5">
-                        <span>🌸</span> 14期卒業から
+                    <div className="space-y-2.5">
+                      <p className="text-[11px] sm:text-xs font-bold text-rose-700 tracking-wider flex items-center gap-1.5">
+                        <span>🌸</span> 14期卒業から経過した時間
                       </p>
-                      <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 font-serif text-[#4a3e3d]">
-                        <span className="text-2xl sm:text-3xl font-bold text-rose-600">{timeStatus.years}</span>
-                        <span className="text-xs sm:text-sm">年</span>
+                      <div className="flex flex-wrap items-start gap-2 sm:gap-3">
+                        <FlipDigit value={String(timeStatus.years)} label="YEARS" isAccent />
                         {timeStatus.days > 0 && (
-                          <>
-                            <span className="text-xl sm:text-2xl font-bold">{timeStatus.days}</span>
-                            <span className="text-xs sm:text-sm">日</span>
-                          </>
+                          <FlipDigit value={String(timeStatus.days)} label="DAYS" />
                         )}
-                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.hours).padStart(2, '0')}</span>
-                        <span className="text-xs sm:text-sm">時間</span>
-                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.minutes).padStart(2, '0')}</span>
-                        <span className="text-xs sm:text-sm">分</span>
+                        <FlipDigit value={String(timeStatus.hours).padStart(2, '0')} label="HOURS" />
+                        <FlipDigit value={String(timeStatus.minutes).padStart(2, '0')} label="MINS" />
+                        <FlipDigit value={String(timeStatus.seconds).padStart(2, '0')} label="SECS" isAccent />
                       </div>
                     </div>
                   )}
@@ -403,8 +436,8 @@ export default function Home() {
 
               <div className="bg-white p-5 sm:p-6 border border-rose-100 rounded-2xl shadow-sm flex flex-col justify-between space-y-4">
                 <div>
-                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-bold">DEAR メイン</span>
-                  <h4 className="font-serif font-bold text-base sm:text-lg text-[#4a3e3d] mt-2">「DEAR - THE 14th HARMONY」OPムービー</h4>
+                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-bold">DE4r メイン</span>
+                  <h4 className="font-serif font-bold text-base sm:text-lg text-[#4a3e3d] mt-2">「DE4r - THE 14th HARMONY」OPムービー</h4>
                   <p className="text-xs text-gray-600 mt-1.5 font-light leading-relaxed">ステージの開幕を告げる、手紙と桜が織りなす感動のオープニング。</p>
                 </div>
                 <button className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
@@ -423,21 +456,21 @@ export default function Home() {
                 </span>
                 <h3 className="text-lg sm:text-xl font-serif font-bold text-[#4a3e3d]">3. デジタル版パンフレット</h3>
               </div>
-              <span className="text-xs text-gray-500">テーマ：DEAR</span>
+              <span className="text-xs text-gray-500">テーマ：DE4r</span>
             </div>
 
             <div className="bg-gradient-to-br from-white via-rose-50/20 to-orange-50/20 border border-rose-200/80 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center gap-6">
               <div className="w-full md:w-1/3 bg-[#f7eee3] h-56 sm:h-64 rounded-2xl flex flex-col items-center justify-center text-gray-600 text-xs font-serif border-2 border-dashed border-rose-200/80 shadow-inner p-4 text-center space-y-2 relative">
                 <span className="text-3xl">✉️</span>
-                <span className="font-bold text-base text-[#4a3e3d]">DEAR</span>
+                <span className="font-bold text-base text-[#4a3e3d]">DE4r</span>
                 <span className="text-[11px] text-gray-500">はもねぴあ14期 卒業記念パンフレット</span>
               </div>
 
               <div className="w-full md:w-2/3 space-y-3">
                 <span className="text-[10px] bg-rose-100 text-rose-800 px-3 py-1 rounded-full font-bold">手紙形式パンフレット</span>
-                <h4 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d]">DEAR — 16人からあなたへ届ける言葉</h4>
+                <h4 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d]">DE4r — 16人からあなたへ届ける言葉</h4>
                 <p className="text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-                  全出演バンドのセットリスト、手紙（DEAR）として綴られたメンバー一人ひとりからのメッセージ、4年間の思い出を収録。
+                  全出演バンドのセットリスト、手紙（DE4r）として綴られたメンバー一人ひとりからのメッセージ、4年間の思い出を収録。
                 </p>
                 <div className="pt-2 flex flex-wrap gap-3">
                   <button 
@@ -456,9 +489,9 @@ export default function Home() {
         {/* フッター */}
         <footer className="bg-[#4a3e3d] text-rose-100 text-xs py-10 sm:py-12 mt-16 border-t border-rose-200/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-3">
-            <p className="font-serif text-[#fcf8f2] tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DEAR」実行委員会</p>
+            <p className="font-serif text-[#fcf8f2] tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DE4r」実行委員会</p>
             <p className="font-light text-rose-200/90 text-[11px] sm:text-xs">おたけ, こっこ, しなぽん, とも, うっしー, まつきよ, ディアナ, あんこ, もんろー, りずり, むっきー, ユン, ゆめ, やっすん, ちぇりこ, えすて</p>
-            <p className="text-rose-300/60 text-[10px] sm:text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "DEAR". All Rights Reserved.</p>
+            <p className="text-rose-300/60 text-[10px] sm:text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "DE4r". All Rights Reserved.</p>
           </div>
         </footer>
       </div>
