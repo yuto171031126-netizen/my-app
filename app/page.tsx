@@ -163,7 +163,7 @@ export default function Home() {
         {/* 最上部バナー */}
         <div className="bg-gradient-to-r from-rose-100 via-pink-100 to-rose-100 text-rose-900 py-2 px-4 sm:px-6 text-[11px] sm:text-xs font-medium flex justify-between items-center border-b border-rose-200">
           <span className="truncate">
-            🌸 HAMONEPIA 14TH — THEME: <strong className="font-serif text-rose-800">"DE4r"</strong>
+            🌸 HAMONEPIA 14TH — THEME: <strong className="font-serif text-rose-800">"De４r"</strong>
           </span>
           <span className="hidden sm:inline text-rose-700/80">【はもねぴあ14期 卒業記念ポータル】</span>
         </div>
@@ -173,7 +173,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap justify-between items-center gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d] flex items-center gap-2">
-                <span>✉️</span> DE4r. 
+                <span>✉️</span> De４r. 
                 <span className="text-[10px] sm:text-xs font-sans font-normal bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 rounded-full">
                   14期 卒ライ特設
                 </span>
@@ -221,12 +221,12 @@ export default function Home() {
             <div className="relative z-10 w-full max-w-2xl space-y-5">
               <div className="inline-flex items-center gap-2 bg-rose-100/70 border border-rose-200 px-3 py-0.5 rounded-full text-[11px] sm:text-xs">
                 <span className="text-rose-800 font-serif">14TH GRADUATION THEME</span>
-                <span className="text-rose-900 font-bold font-serif">" DE4r "</span>
+                <span className="text-rose-900 font-bold font-serif">" De４r "</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-normal tracking-wide leading-snug sm:leading-relaxed text-[#4a3e3d]">
                 舞い散る桜の下で紡ぐ、<br />
-                一通の特別な手紙（DE4r）。
+                一通の特別な手紙（De４r）。
               </h2>
 
               {/* 🌟 カチャッと動くパタパタ時計風タイマーボックス */}
@@ -436,9 +436,9 @@ export default function Home() {
 
               <div className="bg-white p-5 sm:p-6 border border-rose-100 rounded-2xl shadow-sm flex flex-col justify-between space-y-4">
                 <div>
-                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-bold">DE4r メイン</span>
-                  <h4 className="font-serif font-bold text-base sm:text-lg text-[#4a3e3d] mt-2">「DE4r - THE 14th HARMONY」OPムービー</h4>
-                  <p className="text-xs text-gray-600 mt-1.5 font-light leading-relaxed">ステージの開幕を告げる、手紙と桜が織りなす感動のオープニング。</p>
+                  <span className="text-[10px] bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-0.5 rounded-full font-bold">De４r メイン</span>
+                  <h4 className="font-serif font-bold text-base sm:text-lg text-[#4a3e3d] mt-2">「De４r - THE 14th HARMONY」OPムービー</h4>
+                  <p className="text-xs text-gray-60 mt-1.5 font-light leading-relaxed">ステージの開幕を告げる、手紙と桜が織りなす感動のオープニング。</p>
                 </div>
                 <button className="bg-rose-500 hover:bg-rose-600 text-white py-2.5 px-5 rounded-full text-xs font-medium transition self-start shadow-xs">
                   映像を再生する ▶
@@ -456,21 +456,21 @@ export default function Home() {
                 </span>
                 <h3 className="text-lg sm:text-xl font-serif font-bold text-[#4a3e3d]">3. デジタル版パンフレット</h3>
               </div>
-              <span className="text-xs text-gray-500">テーマ：DE4r</span>
+              <span className="text-xs text-gray-500">テーマ：De４r</span>
             </div>
 
             <div className="bg-gradient-to-br from-white via-rose-50/20 to-orange-50/20 border border-rose-200/80 rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center gap-6">
               <div className="w-full md:w-1/3 bg-[#f7eee3] h-56 sm:h-64 rounded-2xl flex flex-col items-center justify-center text-gray-600 text-xs font-serif border-2 border-dashed border-rose-200/80 shadow-inner p-4 text-center space-y-2 relative">
                 <span className="text-3xl">✉️</span>
-                <span className="font-bold text-base text-[#4a3e3d]">DE4r</span>
-                <span className="text-[11px] text-gray-500">はもねぴあ14期 卒業記念パンフレット</span>
+                <span className="font-bold text-base text-[#4a3e3d]">De４r</span>
+                <span className="text-[11px] text-gray-500">はもねぴあ１４期 卒業記念パンフレット</span>
               </div>
 
               <div className="w-full md:w-2/3 space-y-3">
                 <span className="text-[10px] bg-rose-100 text-rose-800 px-3 py-1 rounded-full font-bold">手紙形式パンフレット</span>
-                <h4 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d]">DE4r — 16人からあなたへ届ける言葉</h4>
+                <h4 className="text-xl sm:text-2xl font-serif font-bold text-[#4a3e3d]">はもねぴあ１４期 卒業記念パンフレット</h4>
                 <p className="text-xs sm:text-sm text-gray-600 font-light leading-relaxed">
-                  全出演バンドのセットリスト、手紙（DE4r）として綴られたメンバー一人ひとりからのメッセージ、4年間の思い出を収録。
+                  全出演バンドのセットリスト、手紙（De４r）として綴られたメンバー一人ひとりからのメッセージ、4年間の思い出を収録。
                 </p>
                 <div className="pt-2 flex flex-wrap gap-3">
                   <button 
@@ -489,9 +489,9 @@ export default function Home() {
         {/* フッター */}
         <footer className="bg-[#4a3e3d] text-rose-100 text-xs py-10 sm:py-12 mt-16 border-t border-rose-200/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center space-y-3">
-            <p className="font-serif text-[#fcf8f2] tracking-widest text-sm">はもねぴあ14期 卒業ライブ「DE4r」実行委員会</p>
+            <p className="font-serif text-[#fcf8f2] tracking-widest text-sm">はもねぴあ14期 卒業ライブ「De４r」実行委員会</p>
             <p className="font-light text-rose-200/90 text-[11px] sm:text-xs">おたけ, こっこ, しなぽん, とも, うっしー, まつきよ, ディアナ, あんこ, もんろー, りずり, むっきー, ユン, ゆめ, やっすん, ちぇりこ, えすて</p>
-            <p className="text-rose-300/60 text-[10px] sm:text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "DE4r". All Rights Reserved.</p>
+            <p className="text-rose-300/60 text-[10px] sm:text-[11px] pt-4">© 2027 hamonepia-14th Graduation Live "De４r". All Rights Reserved.</p>
           </div>
         </footer>
       </div>
