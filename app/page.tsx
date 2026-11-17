@@ -18,13 +18,25 @@ const petals = Array.from({ length: 12 }).map((_, i) => ({
   opacity: 0.4 + Math.random() * 0.4,
 }));
 
+// 🌟 卒ライ終了日時（2027年3月14日 20:00:00 に設定。時間は自由に変えられます！）
+const TARGET_DATE = new Date('2027-03-14T20:00:00+09:00');
+
 export default function Home() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [activeYearKey, setActiveYearKey] = useState<'1st' | '2nd' | '3rd' | '4th'>('1st');
-  
-  // 🌟 3段階目（イベントの詳細・写真一覧を見ている状態）を管理するステート
   const [selectedEvent, setSelectedEvent] = useState<EventItem | null>(null);
 
+  // 🌟 カウントダウン＆経過時間を管理するステート
+  const [timeStatus, setTimeStatus] = useState<{
+    isFinished: boolean;
+    years: number;
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
+
+  // スライドショーの自動切り替え
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentIdx((prev) => (prev + 1) % slideMedia.length);
@@ -32,17 +44,45 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
+  // 🌟 1秒ごとに現在時刻を計算するタイマー処理
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date();
+      const diff = TARGET_DATE.getTime() - now.getTime();
+
+      if (diff > 0) {
+        // 卒ライ終了前（残り時間）
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((diff / 1000 / 60) % 60);
+        const seconds = Math.floor((diff / 1000) % 60);
+        setTimeStatus({ isFinished: false, years: 0, days, hours, minutes, seconds });
+      } else {
+        // 卒ライ終了後（経過時間）
+        const elapsed = Math.abs(diff);
+        const totalDays = Math.floor(elapsed / (1000 * 60 * 60 * 24));
+        const years = Math.floor(totalDays / 365);
+        const days = totalDays % 365;
+        const hours = Math.floor((elapsed / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((elapsed / 1000 / 60) % 60);
+        const seconds = Math.floor((elapsed / 1000) % 60);
+        setTimeStatus({ isFinished: true, years, days, hours, minutes, seconds });
+      }
+    };
+
+    updateTimer(); // 初回即時実行
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const currentYearData = albumByYears.find((y) => y.yearKey === activeYearKey) || albumByYears[0];
 
-  // 学年を切り替えたら詳細表示をリセット
   const handleYearChange = (yearKey: '1st' | '2nd' | '3rd' | '4th') => {
     setActiveYearKey(yearKey);
     setSelectedEvent(null);
   };
 
-  // デジタル版パンフレット（PDF）を開く関数
   const handleOpenPdf = () => {
-    // 実際のPDFのパスやSupabaseのURLに書き換えてください
     window.open('/sample-pamphlet.pdf', '_blank');
   };
 
@@ -82,7 +122,7 @@ export default function Home() {
       </div>
 
       <div className="relative z-10">
-        {/* 最上部バナー（スマホで文字がはみ出さないよう調整） */}
+        {/* 最上部バナー */}
         <div className="bg-gradient-to-r from-rose-100 via-pink-100 to-rose-100 text-rose-900 py-2 px-4 sm:px-6 text-[11px] sm:text-xs font-medium flex justify-between items-center border-b border-rose-200">
           <span className="truncate">
             🌸 HAMONEPIA 14TH — THEME: <strong className="font-serif text-rose-800">"DEAR"</strong>
@@ -102,7 +142,6 @@ export default function Home() {
               </h1>
             </div>
 
-            {/* スマホでは非表示にする検索バー */}
             <div className="hidden md:flex items-center gap-2">
               <input 
                 type="text" 
@@ -115,7 +154,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ナビゲーションメニュー（スマホでスクロール可能） */}
           <div className="bg-[#5c4b4a] text-rose-100 text-xs">
             <div className="max-w-7xl mx-auto flex overflow-x-auto px-4 py-2 gap-3 scrollbar-none">
               <a href="#top" className="bg-rose-400 text-white px-4 py-1.5 rounded-full font-bold whitespace-nowrap shadow-xs">総合TOP</a>
@@ -130,7 +168,7 @@ export default function Home() {
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-10 sm:space-y-12">
           
           {/* ヒーロービジュアル */}
-          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[320px] flex items-center">
+          <div className="bg-[#fffdf9]/90 backdrop-blur-xs rounded-3xl p-6 sm:p-10 md:p-12 relative overflow-hidden shadow-md border border-rose-200/80 min-h-[340px] flex items-center">
             {slideMedia.map((media, idx) => (
               <div
                 key={idx}
@@ -142,7 +180,7 @@ export default function Home() {
             ))}
             <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/85 to-rose-50/50" />
 
-            <div className="relative z-10 max-w-2xl space-y-3 sm:space-y-4">
+            <div className="relative z-10 w-full max-w-2xl space-y-4">
               <div className="inline-flex items-center gap-2 bg-rose-100/70 border border-rose-200 px-3 py-0.5 rounded-full text-[11px] sm:text-xs">
                 <span className="text-rose-800 font-serif">GRADUATION THEME</span>
                 <span className="text-rose-900 font-bold font-serif">" DEAR "</span>
@@ -152,11 +190,55 @@ export default function Home() {
                 舞い散る桜の下で紡ぐ、<br />
                 一通の特別な手紙（DEAR）。
               </h2>
+
+              {/* 🌟 カウントダウン＆経過タイマーボックス */}
+              {timeStatus && (
+                <div className="bg-white/90 border border-rose-200/90 rounded-2xl p-3.5 sm:p-4 shadow-2xs inline-block max-w-full">
+                  {!timeStatus.isFinished ? (
+                    <div className="space-y-1">
+                      <p className="text-[11px] sm:text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                        <span>⏳</span> 2027.03.14 卒業ライブ終了まであと
+                      </p>
+                      <div className="flex items-baseline gap-1.5 sm:gap-2 font-serif text-[#4a3e3d]">
+                        <span className="text-2xl sm:text-3xl font-bold text-rose-600">{timeStatus.days}</span>
+                        <span className="text-xs sm:text-sm">日</span>
+                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.hours).padStart(2, '0')}</span>
+                        <span className="text-xs sm:text-sm">時間</span>
+                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.minutes).padStart(2, '0')}</span>
+                        <span className="text-xs sm:text-sm">分</span>
+                        <span className="text-base sm:text-lg font-bold text-rose-400">{String(timeStatus.seconds).padStart(2, '0')}</span>
+                        <span className="text-[11px] sm:text-xs text-gray-500">秒</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-[11px] sm:text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                        <span>🌸</span> 14期卒業から
+                      </p>
+                      <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2 font-serif text-[#4a3e3d]">
+                        <span className="text-2xl sm:text-3xl font-bold text-rose-600">{timeStatus.years}</span>
+                        <span className="text-xs sm:text-sm">年</span>
+                        {timeStatus.days > 0 && (
+                          <>
+                            <span className="text-xl sm:text-2xl font-bold">{timeStatus.days}</span>
+                            <span className="text-xs sm:text-sm">日</span>
+                          </>
+                        )}
+                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.hours).padStart(2, '0')}</span>
+                        <span className="text-xs sm:text-sm">時間</span>
+                        <span className="text-xl sm:text-2xl font-bold">{String(timeStatus.minutes).padStart(2, '0')}</span>
+                        <span className="text-xs sm:text-sm">分</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <p className="text-gray-600 text-xs sm:text-sm font-light leading-relaxed">
                 おたけ、こっこ、しなぽん、とも、そして大切な14期の仲間たちへ。4年間の感謝と愛を込めて、思い出のアルバム・秘蔵映像・パンフレットをお届けします。
               </p>
 
-              <div className="pt-2 flex flex-wrap gap-2.5">
+              <div className="pt-1 flex flex-wrap gap-2.5">
                 <a href="#pamphlet" className="bg-rose-500 text-white font-medium px-5 py-2.5 rounded-full text-xs hover:bg-rose-600 transition shadow-sm flex items-center gap-1.5">
                   ✉️ デジタルパンフを読む
                 </a>
@@ -177,7 +259,6 @@ export default function Home() {
               <p className="text-xs text-gray-500 mt-1">学年を選び、イベントをクリックすると、中の写真や思い出が表示されます。</p>
             </div>
 
-            {/* Step 1: 1〜4年生の学年選択ボタン（スマホで2列、PCで4列） */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {albumByYears.map((group) => {
                 const isSelected = group.yearKey === activeYearKey;
@@ -207,11 +288,8 @@ export default function Home() {
               })}
             </div>
 
-            {/* Step 2 & 3: イベント一覧 または 選択したイベント内の写真詳細 */}
             <div className="bg-white/80 backdrop-blur-xs border border-rose-200/80 rounded-3xl p-4 sm:p-6 md:p-8 space-y-4 shadow-sm">
-              
               {selectedEvent ? (
-                // 🌟 ステップ3：イベントの中の写真・詳細一覧ビュー
                 <div className="space-y-6 animate-fadeIn">
                   <div className="flex flex-wrap justify-between items-center border-b border-rose-100 pb-3 gap-2">
                     <div>
@@ -222,7 +300,6 @@ export default function Home() {
                         ✨ {selectedEvent.title} の思い出写真館
                       </h4>
                     </div>
-                    {/* 戻るボタン */}
                     <button 
                       onClick={() => setSelectedEvent(null)}
                       className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-1.5 rounded-full text-xs transition font-medium flex items-center gap-1"
@@ -235,7 +312,6 @@ export default function Home() {
                     📝 {selectedEvent.description}
                   </p>
 
-                  {/* 中の写真グリッド */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2">
                     {selectedEvent.detailPhotos && selectedEvent.detailPhotos.length > 0 ? (
                       selectedEvent.detailPhotos.map((photo: PhotoDetail) => (
@@ -250,12 +326,11 @@ export default function Home() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-xs text-gray-400 col-span-full text-py-8">（写真がまだ登録されていません）</p>
+                      <p className="text-xs text-gray-400 col-span-full py-8">（写真がまだ登録されていません）</p>
                     )}
                   </div>
                 </div>
               ) : (
-                // 🌟 ステップ2：その学年のイベント項目一覧ビュー
                 <div className="space-y-4">
                   <div className="flex flex-wrap justify-between items-center border-b border-rose-100 pb-3 gap-2">
                     <h4 className="font-serif font-bold text-base sm:text-lg text-[#4a3e3d] flex items-center gap-2">
@@ -270,7 +345,7 @@ export default function Home() {
                     {currentYearData.events.map((event: EventItem) => (
                       <div 
                         key={event.id} 
-                        onClick={() => setSelectedEvent(event)} // 👈 クリックすると中の写真へドリルダウン！
+                        onClick={() => setSelectedEvent(event)}
                         className="bg-[#fffdf9] border border-rose-100 rounded-2xl p-4 shadow-2xs hover:shadow-md hover:border-rose-300 transition cursor-pointer group space-y-3"
                       >
                         <div className="h-40 sm:h-44 bg-[#f5ede4] rounded-xl overflow-hidden border border-rose-100/60 relative">
@@ -299,7 +374,6 @@ export default function Home() {
                   </div>
                 </div>
               )}
-
             </div>
           </section>
 
@@ -340,7 +414,7 @@ export default function Home() {
             </div>
           </section>
 
-          {/* 3. デジタル版パンフセクション（PDFを開く機能付き） */}
+          {/* 3. デジタル版パンフセクション */}
           <section id="pamphlet" className="space-y-4">
             <div className="flex justify-between items-end border-b border-rose-200 pb-3">
               <div>
